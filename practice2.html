@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>product inventory</title>
+</head>
+<body>
+    <script>
+        let products = [];
+
+        function addProduct (products) {
+            const product = {
+                id: products.length + 1,
+                name: prompt("Enter product name"),
+                price: Number(prompt("Enter the price of the product")),
+                quantity: Number(prompt("Enter the quantity"))
+            };
+            products.push(product);
+            console.log("Product id for ", product.name, ": ",product.id);
+        }
+
+        function updateProduct (products) {
+            let id = Number(prompt("Enter the id"));
+            let newQuantity = Number(prompt("Enter the New Quantity"));
+
+            if(id < 1 && id > products.length) {
+                console.log("Invalid ID");
+                return;
+            }
+
+            products[id-1].quantity = newQuantity;
+            console.log("New Quantity: ", products[id-1].quantity);
+        }
+
+        function getAvailableProducts (products) {
+            return products.filter((value) => value.quantity > 0);
+        }
+
+        addProduct(products);
+        addProduct(products);
+        addProduct(products);
+        updateProduct(products);
+        console.log("Products: ");
+        products.forEach(p => {
+            console.log(p.id, p.name, p.price, p.quantity);
+        });
+        let availableProducts = getAvailableProducts(products);
+        console.log("Available Products: ");
+        availableProducts.forEach(p => {
+            console.log(p.id, p.name, p.price, p.quantity);
+        });
+    </script>
+</body>
+</html>
