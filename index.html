@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Product Inventory</title>
+</head>
+
+    <h1>Product Inventory</h1>
+
+    <div>
+        <h3>Add Product</h3>
+        <input type="text" id="name" placeholder="Product Name">
+        <input type="number" id="price" placeholder="Price">
+        <input type="number" id="quantity" placeholder="Quantity">
+        <button onclick="addProduct()">Add</button>
+    </div>
+
+    <br>
+
+    <div>
+        <h3>Update Product</h3>
+        <input type="number" id="id" placeholder="Product Id">
+        <input type="number" id="updatedPrice" placeholder="Price">
+        <input type="number" id="updatedQuantity" placeholder="Quantity">
+        <button onclick="updateProduct()">Update</button>
+    </div>
+
+    <br>
+
+    <div>
+        <h3>All Products</h3>
+        <button onclick="displayProducts()">All Products</button>
+        <pre id="productList"></pre>
+    </div>
+
+    <br>
+
+    <script src="index.js"></script>
+    </body>
+
+</html>
