@@ -43,9 +43,25 @@ button:hover {
     background-color: #2980b9;
 }
 
-pre {
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+}
+
+th, td {
+    padding: 10px;
+    border: 1px solid #ccc;
+    text-align: center;
+}
+
+thead {
+    background-color: #eee;
+}
+
+/* pre {
     background-color: #f0f0f0;
     padding: 15px;
     border-radius: 5px;
     white-space: pre-wrap;
-}
+} */

@@ -31,12 +31,42 @@
     <br>
 
     <div>
-        <h3>All Products</h3>
-        <button onclick="displayProducts()">All Products</button>
-        <pre id="productList"></pre>
+        <h3>Display Products</h3>
+        <button onclick="displayProducts()">Show Products</button>
+        <table id="productTable">
+            <thead>
+                <tr>
+                    <th>Id</th>
+                    <th>Product Name</th>
+                    <th>Price</th>
+                    <th>quantity</th>
+                </tr>
+            </thead>
+            <tbody id="tableBody"></tbody>
+        </table>
+        <!-- <pre id="productList"></pre> -->
     </div>
 
     <br>
+
+    <div id="delete">
+        <h3>Delete Product</h3>
+        <input type="number" id="d_id" placeholder="Product Id">
+        <button onclick="showProduct()">Show</button>
+        <table id="deleteTable">
+            <thead>
+                <tr>
+                    <th>Id</th>
+                    <th>Product Name</th>
+                    <th>Price</th>
+                    <th>quantity</th>
+                </tr>
+            </thead>
+            <tbody id="deleteTableBody"></tbody>
+        </table>
+        <button id="confirmDelete" onclick="deleteProduct()" style="display: none;">Delete</button>
+        <button id="cancelDelete" onclick="cancelDelete()" style="display: none;">Cancel</button>
+    </div>
 
     <script src="index.js"></script>
     </body>
