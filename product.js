@@ -1,5 +1,20 @@
 let products = [];
 
+function Product(id,name,price,quantity) {
+    this.id = id;
+    this.name = name;
+    this.price = price;
+    this.quantity = quantity;
+}
+
+function changePrice(newPrice) {
+    this.price = newPrice;
+}
+
+function changeQuantity(newQuantity) {
+    this.quantity = newQuantity;
+}
+
 function addProduct() {
     const Name = document.getElementById("name").value.trim();
     const Price = document.getElementById("price").value;
@@ -19,14 +34,7 @@ function addProduct() {
         return;
     }
 
-    const product = {
-        id: products.length + 1,
-        name,
-        price,
-        quantity
-    };
-
-    products.push(product);
+    products.push(new Product(products.length + 1, name, price, quantity));
 
     document.getElementById("name").value = '';
     document.getElementById("price").value = '';
@@ -56,10 +64,10 @@ function updateProduct() {
         return;
     }
     if (u_price !== "") {
-        products[i].price = Number(u_price);
+        products[i].changePrice(Number(u_price));
     }
     if (u_quantity !== "") {
-        products[i].quantity = Number(u_quantity);
+        products[i].changeQuantity(Number(u_quantity));
     }
 
     displayProducts();

@@ -4,8 +4,8 @@ let remainingSeconds;
 function startTimer() {
     const minutes = document.getElementById("minutes").value;
 
-    if (minutes === "" || minutes <= 0) {
-        alert("Invalid input for minutes");
+    if (minutes === "" || minutes <= 0 ) {
+        alert("Enter some valid input for minutes");
         return;
     }
 
@@ -18,7 +18,7 @@ function startTimer() {
         remainingSeconds--;
         displayTime(remainingSeconds);
 
-        if (remainingSeconds === 0) {
+        if (remainingSeconds <= 0) {
             clearInterval(countdown);
             alert("Times Up");
         }
