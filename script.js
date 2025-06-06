@@ -152,3 +152,50 @@ function countOccurence() {
 
     console.log(count);
 }
+
+function lengthOfLongestSubstring() {
+    let str = document.getElementById("input1").value.trim();
+    let start = 0;
+    let max = 0;
+    let seen = new Map();
+
+    for (let end = 0; end < str.length; end++) {
+        let char = str[end];
+
+        if (seen.has(char) && seen.get(char) >= start) {
+            start = seen.get(char) + 1;
+        }
+
+        seen.set(char, end);
+        max = Math.max(max, end - start + 1);
+    }
+
+    console.log("Length of longest substring without repeating characters:", max);
+}
+
+function findIndexOf() {
+    let str = document.getElementById("input1").value.trim();
+    let sub = document.getElementById("input2").value.trim();
+    const n = str.length;
+    const m = sub.length;
+
+    if (m === 0)  {
+        console.log("It is an empty string");
+        return;
+    }
+
+    for (let i = 0; i <= n - m; i++) {
+        let found = true;
+        for (let j = 0; j < m; j++) {
+            if (str[i + j] !== sub[j]) {
+                found = false;
+                break;
+            }
+        }
+        if (found) {
+            console.log("Index: ",i);
+            return;
+        }
+        console.log("Not found");
+    }
+}
