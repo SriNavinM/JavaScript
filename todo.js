@@ -15,6 +15,7 @@ class Task {
                 <b>${this.title}</b>: ${this.description}
                 <br>
                 <button onclick="completeTask(${index})">Complete</button>
+                <button onclick="updateTask(${index})">Update</button>
                 <button onclick="deleteTask(${index})">Delete</button>
             </div>
         `;
@@ -37,6 +38,14 @@ class TaskManager {
     deleteTask(index) {
         this.taskList.splice(index, 1);
     }
+
+    updateTask(index, newTitle, newDesc) {
+        if (this.taskList[index]) {
+            this.taskList[index].title = newTitle;
+            this.taskList[index].description = newDesc;
+        }
+    }
+
 
     update() {
         document.getElementById("taskList").innerHTML = this.taskList.map((task, index) => task.display(index)).join(""); 
@@ -68,4 +77,16 @@ function completeTask(index) {
 function deleteTask(index) {
     handler.deleteTask(index);
     handler.update();
+}
+function updateTask(index) {
+    const currentTask = handler.taskList[index];
+    const newTitle = prompt("Enter new title:", currentTask.title);
+    const newDesc = prompt("Enter new description:", currentTask.description);
+    if (newTitle === "") {
+        alert("Title is required");
+    }
+    else {
+        handler.updateTask(index, newTitle, newDesc);
+        handler.update();
+    }
 }
