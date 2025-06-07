@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Practice</title>
+</head>
+<body>
+    <button onclick="runAllFunctions()">Run</button>
+
+    <script>
+    function destructuring() {
+        console.log("Destructing");
+        const person = { name: "Alice", age: 25, city: "Paris" };
+        const { name, age, city } = person;
+        console.log("Destructured Values:", name, age, city);
+    }
+
+    function shift() {
+        console.log("Shifting");
+        let x = 4;
+        let leftShift = x << 1; 
+        let rightShift = x >> 1; 
+        console.log("Left Shift:", leftShift, "Right Shift:", rightShift);
+    }
+
+    function decToBin(dec) {
+        return (dec >>> 0).toString(2);
+    }
+    function binaryConversion() {
+        console.log("decimal to binary conversion");
+        let input = -5;
+        let bin = decToBin(input);
+        console.log(`Binary of ${input} =`, bin);
+    }
+
+    const normalFunc = function(a, b) {
+        return a + b;
+    };
+
+    const arrowFunc = (a, b) => a + b;
+
+    function functionStyle() {
+        console.log("function types");
+        console.log("Normal Function:", normalFunc, normalFunc(3, 4));
+        console.log("Arrow Function:", arrowFunc, arrowFunc(3, 4));
+    }
+
+    function runAllFunctions() {
+        destructuring();
+        shift();
+        binaryConversion();
+        functionStyle();
+    }
+    </script>
+</body>
+</html>
