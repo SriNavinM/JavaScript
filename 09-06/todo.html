@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Task Manager</title>
+
+    <style>
+        body {
+            padding: 20px;
+        }
+
+        .task {
+            border: 1px;
+            padding: 10px;
+            margin-bottom: 10px;
+        }
+
+        .completed {
+            text-decoration: line-through;
+        }
+
+        button {
+            margin-left: 10px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <h1>Task Manager</h1>
+
+    <input type="text" id="taskTitle" placeholder="Title">
+    <input type="text" id="taskDesc" placeholder="Description">
+    <input type="date" id="dueDate" placeholder="Due Date">
+    <button onclick="addTask()">Add Task</button>
+
+    <div id="taskList"></div>
+
+    <script src="todo.js"></script>
+
+</body>
+
+</html>
