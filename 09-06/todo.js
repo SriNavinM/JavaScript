@@ -29,7 +29,12 @@ class Task {
 
 class TaskManager {
     constructor() {
-        this.taskList = [];
+        const saved = localStorage.getItem("tasks");
+        this.taskList = saved ? JSON.parse(saved).map(x => new Task(x.title, x.description, x.dueDate, x.completed)) : [];
+    }
+
+    save_LocalStorage() {
+        localStorage.setItem("tasks", JSON.stringify(this.taskList));
     }
 
     addTask(title, description, dueDate) {
@@ -38,21 +43,24 @@ class TaskManager {
             return;
         }
         this.taskList.push(new Task(title, description, dueDate));
+        this.save_LocalStorage();
     }
 
     completeTask(index) {
         this.taskList[index].markCompleted();
+        this.save_LocalStorage();
     }
 
     deleteTask(index) {
         this.taskList.splice(index, 1);
+        this.save_LocalStorage();
     }
 
     update() {
     const filter = document.getElementById("statusFilter")?.value || "all";
 
     const filteredTasks = this.taskList
-        .map((task, originalIndex) => ({ task, originalIndex })) // keep original index for actions
+        .map((task, originalIndex) => ({ task, originalIndex }))
         .filter(({ task }) => {
             if (filter === "all") return true;
             if (filter === "pending") return !task.completed;
@@ -72,6 +80,7 @@ class TaskManager {
         this.taskList[index].title = newTitle;
         this.taskList[index].description = newDesc;
         this.taskList[index].dueDate = newDueDate;
+        this.save_LocalStorage();
     }
 }
 
@@ -148,3 +157,7 @@ function saveUpdate() {
 function applyFilter() {
     handler.update();
 }
+
+window.onload = () => {
+    handler.update();
+};
