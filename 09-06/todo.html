@@ -57,6 +57,18 @@
             margin-left: auto;
             margin-right: auto;
         }
+        
+        #searchInput {
+            margin-left: 15px;
+        }
+
+        #completed {
+            color: green;
+        }
+        
+        #pending {
+            color: red;
+        }
 
         button {
             margin-left: 10px;
@@ -117,6 +129,7 @@
             <option value="pending">Pending</option>
             <option value="completed">Completed</option>
         </select>
+        <input type="text" id="searchInput" placeholder="Search tasks..." oninput="applyFilter()" />
 
         <table>
             <thead>

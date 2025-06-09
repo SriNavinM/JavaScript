@@ -1,9 +1,9 @@
 class Task {
-    constructor(title, description, dueDate) {
+    constructor(title, description, dueDate, completed = false) {
         this.title = title;
         this.description = description;
         this.dueDate = dueDate;
-        this.completed = false;
+        this.completed = completed;
     }
 
     markCompleted() {
@@ -16,10 +16,10 @@ class Task {
                 <td>${this.title}</td>
                 <td>${this.description}</td>
                 <td>${this.dueDate}</td>
-                <td>${this.completed ? "Completed" : "Pending"}</td>
+                <td id="${this.completed ? "completed" : "pending"}">${this.completed ? "Completed" : "Pending"}</td>
                 <td>
-                    <button onclick="completeTask(${index})">Complete</button>
-                    <button onclick="editTask(${index})">Update</button>
+                    ${!this.completed ? `<button onclick="completeTask(${index})">Done</button>` : ""}
+                    ${!this.completed ? `<button onclick="updateTask(${index})">Update</button>` : ""}
                     <button onclick="deleteTask(${index})">Delete</button>
                 </td>
             </tr>
@@ -48,6 +48,7 @@ class TaskManager {
 
     completeTask(index) {
         this.taskList[index].markCompleted();
+        this.update();
         this.save_LocalStorage();
     }
 
@@ -58,14 +59,20 @@ class TaskManager {
 
     update() {
     const filter = document.getElementById("statusFilter")?.value || "all";
-
+    const search = document.getElementById("searchInput")?.value.toLowerCase() || "";
     const filteredTasks = this.taskList
         .map((task, originalIndex) => ({ task, originalIndex }))
         .filter(({ task }) => {
-            if (filter === "all") return true;
-            if (filter === "pending") return !task.completed;
-            if (filter === "completed") return task.completed;
-        });
+            const matchStatus = filter === "all" || (filter === "pending" && !task.completed) || (filter === "completed" && task.completed);
+            const matchSearch = task.title.toLowerCase().includes(search);
+
+            return (matchSearch && matchStatus);
+        })
+        .sort((a, b) =>  {
+            return a.task.completed - b.task.completed;
+        })
+
+        
 
     document.getElementById("tableBody").innerHTML = filteredTasks
         .map(({ task, originalIndex }) => task.display(originalIndex))
