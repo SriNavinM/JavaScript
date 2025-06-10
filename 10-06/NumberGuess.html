@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Promise Number Match</title>
+    <style>
+        body {
+            padding: 20px;
+            background-color: white;
+        }
+
+        h1 {
+            text-align: center;
+        }
+
+        #content {
+            background-color: #f7f7f7;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 10px;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        input, button {
+            padding: 10px;
+            font-size: 15px;
+            margin: 10px 10px;
+        }
+
+        #result {
+            margin-top: 20px;
+            font-size: 18px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+
+<body>
+    
+    <h1>Guess the Number</h1>
+    <div id="content">
+        <input type="number" id="userInput" min="0" max="9" placeholder="Enter number">
+        <button onclick="guessCheck()">Check</button>
+        <div id="result"></div>
+    </div>
+
+    <script>
+        function asyncMatch(userInput, generatedNumber) {
+            return new Promise((resolve, reject) => {
+                document.getElementById("result").innerText = "Checking your guess...";
+
+                setTimeout(() => {
+                    if (userInput === generatedNumber) {
+                        resolve("Correct! You guessed it right.");
+                    }
+                    else {
+                        reject(`Wrong! You guessed ${userInput}, but the number was ${generatedNumber}.`);
+                    }
+                }, 1500);
+            });
+        }
+
+        function setDiv(message, ele) {
+            ele.innerText = message;
+        }
+
+        function guessCheck() {
+            const input = Number(document.getElementById("userInput").value);
+            const generatedNumber = Math.floor(Math.random() * 10);
+            const result = document.getElementById("result");
+
+            if (input === "" || input > 9 || input < 0) {
+                result.innerText = "Please Enter a valid number between 0 and 9";
+                return;
+            }
+            asyncMatch(input, generatedNumber).then(
+                function (msg) { 
+                    setDiv(msg, result);
+                    result.style.color = "green";
+                },
+                function (error) { 
+                    setDiv(error, result);
+                    result.style.color = "red";
+                }
+            );
+        }
+    </script>
+</body>
+
+</html>
