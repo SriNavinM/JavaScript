@@ -69,6 +69,14 @@
             color: red;
         }
 
+        #err-msg {
+            display: none;
+            color: red;
+            font-size: 15px;
+            margin: auto;
+            padding-bottom: 15px;
+        }
+
         button {
             margin-left: 10px;
             padding: 10px 15px;
@@ -111,13 +119,6 @@
 <body>
 
     <h1>Task Manager</h1>
-    <div>
-        <h2>Add Task</h2>
-        <input type="text" id="taskTitle" placeholder="Title">
-        <input type="text" id="taskDesc" placeholder="Description">
-        <input type="date" id="taskDueDate" placeholder="Due Date">
-        <button onclick="addTask()">Add Task</button>
-    </div>
 
     <div id="taskList">
         <h2>Tasks</h2>
@@ -128,6 +129,7 @@
             <option value="completed">Completed</option>
         </select>
         <input type="text" id="searchInput" placeholder="Search tasks..." oninput="applyFilter()" />
+        <button onclick="addTask()">Add Task</button>
 
         <table>
             <thead>
@@ -145,12 +147,13 @@
 
     <div id="updateModal" class="modal">
         <div class="modal-content">
-            <h3>Update Task</h3>
-            <input type="text" id="updateTitle" placeholder="Title" style="width:90%; margin-bottom:10px;" />
-            <input type="text" id="updateDesc" placeholder="Description" style="width:90%; margin-bottom:10px;" />
-            <input type="date" id="updateDueDate" placeholder="Due Date" style="width:90%; margin-bottom:10px;" />
+            <h3 id="modalTitle"></h3>
+            <input type="text" id="title" placeholder="Title" style="width:90%; margin-bottom:10px;" />
+            <div id="err-msg"></div>
+            <input type="text" id="desc" placeholder="Description" style="width:90%; margin-bottom:10px;" />
+            <input type="date" id="dueDate" placeholder="Due Date" style="width:90%; margin-bottom:10px;" />
             <div style="text-align:right;">
-                <button onclick="saveUpdate()">Save</button>
+                <button onclick="saveTask()">Save</button>
                 <button onclick="closeModal()">Cancel</button>
             </div>
         </div>

@@ -39,11 +39,14 @@ class TaskManager {
 
     addTask(title, description, dueDate) {
         if (this.taskList.some(task => task.title.toLowerCase() === title.toLowerCase())) {
-            alert("Task with this title already exists");
-            return;
+            const error = document.getElementById("err-msg");
+            error.textContent = "Task with this title already exists!";
+            error.style.display = "block";
+            return flse;
         }
         this.taskList.push(new Task(title, description, dueDate));
         this.save_LocalStorage();
+        return true;
     }
 
     completeTask(index) {
@@ -58,57 +61,43 @@ class TaskManager {
     }
 
     update() {
-    const filter = document.getElementById("statusFilter")?.value || "all";
-    const search = document.getElementById("searchInput")?.value.toLowerCase() || "";
-    const filteredTasks = this.taskList
-        .map((task, originalIndex) => ({ task, originalIndex }))
-        .filter(({ task }) => {
-            const matchStatus = filter === "all" || (filter === "pending" && !task.completed) || (filter === "completed" && task.completed);
-            const matchSearch = task.title.toLowerCase().includes(search);
+        const filter = document.getElementById("statusFilter")?.value || "all";
+        const search = document.getElementById("searchInput")?.value.toLowerCase() || "";
+        const filteredTasks = this.taskList
+            .map((task, originalIndex) => ({ task, originalIndex }))
+            .filter(({ task }) => {
+                const matchStatus = filter === "all" || (filter === "pending" && !task.completed) || (filter === "completed" && task.completed);
+                const matchSearch = task.title.toLowerCase().includes(search);
 
-            return (matchSearch && matchStatus);
-        })
-        .sort((a, b) =>  {
-            return a.task.completed - b.task.completed;
-        })
+                return (matchSearch && matchStatus);
+            })
+            .sort((a, b) => {
+                return a.task.completed - b.task.completed;
+            })
 
-        
 
-    document.getElementById("tableBody").innerHTML = filteredTasks
-        .map(({ task, originalIndex }) => task.display(originalIndex))
-        .join("");
-}
+
+        document.getElementById("tableBody").innerHTML = filteredTasks
+            .map(({ task, originalIndex }) => task.display(originalIndex))
+            .join("");
+    }
 
     updateTask(index, newTitle, newDesc, newDueDate) {
         if (this.taskList.some((task, i) => i !== index && task.title.toLowerCase() === newTitle.toLowerCase())) {
-            alert("Another task with this title already exists!");
-            return;
+            const error = document.getElementById("err-msg");
+            error.textContent = "Task with this title already exists!";
+            error.style.display = "block";
+            return flase;
         }
         this.taskList[index].title = newTitle;
         this.taskList[index].description = newDesc;
         this.taskList[index].dueDate = newDueDate;
         this.save_LocalStorage();
+        return true;
     }
 }
 
 const handler = new TaskManager();
-
-function addTask() {
-    const title = document.getElementById("taskTitle").value.trim();
-    const description = document.getElementById("taskDesc").value.trim();
-    const dueDate = document.getElementById("taskDueDate").value;
-
-    if (title) {
-        handler.addTask(title, description, dueDate);
-        handler.update();
-        document.getElementById("taskTitle").value = "";
-        document.getElementById("taskDesc").value = "";
-        document.getElementById("taskDueDate").value = "";
-    }
-    else {
-        alert("Title is required");
-    }
-}
 
 function completeTask(index) {
     handler.completeTask(index);
@@ -122,31 +111,60 @@ function deleteTask(index) {
 
 let currentUpdateIndex = null;
 
-function editTask(index) {
-    const task = handler.taskList[index];
+function openModal(isEdit = false, index = null) {
+    const modalTitle = document.getElementById("modalTitle");
     currentUpdateIndex = index;
-    document.getElementById("updateTitle").value = task.title;
-    document.getElementById("updateDesc").value = task.description;
-    document.getElementById("updateDueDate").value = task.dueDate;
+
+    if (isEdit) {
+        const task = handler.taskList[index];
+        document.getElementById("title").value = task.title;
+        document.getElementById("desc").value = task.description;
+        document.getElementById("dueDate").value = task.dueDate;
+        modalTitle.textContent = "Update Task";
+    }
+    else {
+        document.getElementById("title").value = "";
+        document.getElementById("desc").value = "";
+        document.getElementById("dueDate").value = "";
+        modalTitle.textContent = "Add Task";
+    }
 
     document.getElementById("updateModal").style.display = "block";
 }
 
-function closeModal() {
-    document.getElementById("updateModal").style.display = "none";
+function addTask() {
+    openModal();
 }
 
-function saveUpdate() {
-    const newTitle = document.getElementById("updateTitle").value.trim();
-    const newDesc = document.getElementById("updateDesc").value.trim();
-    const newDueDate = document.getElementById("updateDueDate").value;
+function editTask(index) {
+    openModal(true, index);
+}
 
-    if (newTitle === "") {
-        alert("Title is required");
+function closeModal() {
+    document.getElementById("updateModal").style.display = "none";
+    document.getElementById("err-msg").style.display = "none";
+    currentUpdateIndex = null;
+}
+
+function saveTask() {
+    const title = document.getElementById("title").value.trim();
+    const desc = document.getElementById("desc").value.trim();
+    const dueDate = document.getElementById("dueDate").value;
+
+    if (title === "") {
+        const error = document.getElementById("err-msg");
+        error.textContent = "Title is required";
+        error.style.display = "block";
         return;
     }
 
-    handler.updateTask(currentUpdateIndex, newTitle, newDesc, newDueDate);
+    if (currentUpdateIndex == null) {
+        if(!handler.addTask(title, desc, dueDate)) return;
+    }
+    else {
+        if(!handler.updateTask(currentUpdateIndex, title, desc, dueDate)) return;
+    }
+
     handler.update();
     closeModal();
 }
