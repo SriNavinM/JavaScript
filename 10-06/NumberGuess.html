@@ -69,14 +69,16 @@
         }
 
         function guessCheck() {
-            const input = Number(document.getElementById("userInput").value);
+            const userInput = document.getElementById("userInput").value;
             const generatedNumber = Math.floor(Math.random() * 10);
             const result = document.getElementById("result");
+            result.style.color = "black";
 
-            if (input === "" || input > 9 || input < 0) {
+            if (userInput === "" || userInput > 9 || userInput < 0) {
                 result.innerText = "Please Enter a valid number between 0 and 9";
                 return;
             }
+            const input = Number(userInput);
             asyncMatch(input, generatedNumber).then(
                 function (msg) { 
                     setDiv(msg, result);
