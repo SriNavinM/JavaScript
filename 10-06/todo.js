@@ -42,7 +42,7 @@ class TaskManager {
             const error = document.getElementById("err-msg");
             error.textContent = "Task with this title already exists!";
             error.style.display = "block";
-            return flse;
+            return false;
         }
         this.taskList.push(new Task(title, description, dueDate));
         this.save_LocalStorage();
