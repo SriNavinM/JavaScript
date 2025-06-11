@@ -87,7 +87,7 @@ class TaskManager {
             const error = document.getElementById("err-msg");
             error.textContent = "Task with this title already exists!";
             error.style.display = "block";
-            return flase;
+            return false;
         }
         this.taskList[index].title = newTitle;
         this.taskList[index].description = newDesc;
