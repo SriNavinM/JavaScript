@@ -1,0 +1,32 @@
+[
+    {
+        "title": "Atm",
+        "description": "take cash",
+        "dueDate": "2025-06-13",
+        "completed": false
+    },
+    {
+        "title": "Bike Service",
+        "description": "Engine oil",
+        "dueDate": "2025-06-12",
+        "completed": false
+    },
+    {
+        "title": "Groceries",
+        "description": "",
+        "dueDate": "",
+        "completed": false
+    },
+    {
+        "title": "food",
+        "description": "",
+        "dueDate": "2025-06-11",
+        "completed": false
+    },
+    {
+        "title": "bus",
+        "description": "",
+        "dueDate": "",
+        "completed": false
+    }
+]

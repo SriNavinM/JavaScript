@@ -29,35 +29,56 @@ class Task {
 
 class TaskManager {
     constructor() {
-        const saved = localStorage.getItem("tasks");
-        this.taskList = saved ? JSON.parse(saved).map(x => new Task(x.title, x.description, x.dueDate, x.completed)) : [];
+        fetch("/api/tasks")
+            .then(response => response.json())
+            .then(data => {
+                this.taskList = data.map(x => new Task(x.title, x.description, x.dueDate, x.completed));
+                this.update();
+            })
+            .catch(err => console.error("Failed to load tasks", err));
     }
 
-    save_LocalStorage() {
-        localStorage.setItem("tasks", JSON.stringify(this.taskList));
-    }
-
-    addTask(title, description, dueDate) {
+    async addTask(title, description, dueDate) {
         if (this.taskList.some(task => task.title.toLowerCase() === title.toLowerCase())) {
             const error = document.getElementById("err-msg");
             error.textContent = "Task with this title already exists!";
             error.style.display = "block";
             return false;
         }
-        this.taskList.push(new Task(title, description, dueDate));
-        this.save_LocalStorage();
+        const newTask = { title, description, dueDate, completed: false };
+
+        try {
+            const response = await fetch("/api/tasks", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(newTask)
+            });
+
+            if (!response.ok) {
+                throw new Error("Failed to save task");
+            }
+
+            this.taskList.push(new Task(title, description, dueDate, false));
+            return true;
+        } catch (err) {
+            console.error(err);
+            const error = document.getElementById("err-msg");
+            error.textContent = "Error saving task!";
+            error.style.display = "block";
+            return false;
+        }
         return true;
     }
 
     completeTask(index) {
         this.taskList[index].markCompleted();
         this.update();
-        this.save_LocalStorage();
     }
 
     deleteTask(index) {
         this.taskList.splice(index, 1);
-        this.save_LocalStorage();
     }
 
     update() {
@@ -92,7 +113,6 @@ class TaskManager {
         this.taskList[index].title = newTitle;
         this.taskList[index].description = newDesc;
         this.taskList[index].dueDate = newDueDate;
-        this.save_LocalStorage();
         return true;
     }
 }
@@ -146,7 +166,7 @@ function closeModal() {
     currentUpdateIndex = null;
 }
 
-function saveTask() {
+async function saveTask() {
     const title = document.getElementById("title").value.trim();
     const desc = document.getElementById("desc").value.trim();
     const dueDate = document.getElementById("dueDate").value;
@@ -159,7 +179,8 @@ function saveTask() {
     }
 
     if (currentUpdateIndex == null) {
-        if(!handler.addTask(title, desc, dueDate)) return;
+        const flag = await handler.addTask(title, desc, dueDate);
+        if(!flag) return;
     }
     else {
         if(!handler.updateTask(currentUpdateIndex, title, desc, dueDate)) return;
