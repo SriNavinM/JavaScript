@@ -22,7 +22,7 @@ class Task {
                 <td>${this.title}</td>
                 <td>${this.description}</td>
                 <td>${due}</td>
-                <td id="${this.completed ? "completed" : "pending"}">${this.completed ? "Completed" + completedInfo : "Pending"}
+                <td id="${this.completed ? "completed" : "pending"}">${this.completed ? "Completed" + completedInfo : "Pending"}</td>
                 <td>
                     ${!this.completed ? `<button onclick="completeTask(${index})">Done</button>` : ""}
                     ${!this.completed ? `<button onclick="editTask(${index})">Update</button>` : ""}
@@ -116,24 +116,47 @@ class TaskManager {
     }
 
     update() {
-        const filter = document.getElementById("statusFilter")?.value || "all";
-        const search = document.getElementById("searchInput")?.value.toLowerCase() || "";
-        const filteredTasks = this.taskList
-            .map((task, originalIndex) => ({ task, originalIndex }))
-            .filter(({ task }) => {
-                const matchStatus = filter === "all" || (filter === "pending" && !task.completed) || (filter === "completed" && task.completed);
-                const matchSearch = task.title.toLowerCase().includes(search);
+    const filter = document.getElementById("statusFilter")?.value || "all";
+    const search = document.getElementById("searchInput")?.value.toLowerCase() || "";
+    const sortField = document.getElementById("sortField")?.value || "dueDate";
+    const sortOrder = document.getElementById("sortOrder")?.value || "asc";
 
-                return (matchSearch && matchStatus);
-            })
-            .sort((a, b) => {
-                return a.task.completed - b.task.completed;
-            })
+    const filteredTasks = this.taskList
+        .map((task, originalIndex) => ({ task, originalIndex }))
+        .filter(({ task }) => {
+            const matchStatus =
+                filter === "all" || (filter === "pending" && !task.completed) || (filter === "completed" && task.completed);
+            const matchSearch = task.title.toLowerCase().includes(search);
+            return matchStatus && matchSearch;
+        })
+        .sort((a, b) => {
+            let valA, valB;
 
-        document.getElementById("tableBody").innerHTML = filteredTasks
-            .map(({ task, originalIndex }) => task.display(originalIndex))
-            .join("");
-    }
+            if (sortField === "status") {
+                valA = a.task.completed ? 1 : 0;
+                valB = b.task.completed ? 1 : 0;
+            } else {
+                valA = a.task[sortField];
+                valB = b.task[sortField];
+
+                if (sortField === "dueDate") {
+                    valA = new Date(valA);
+                    valB = new Date(valB);
+                } else if (typeof valA === "string" && typeof valB === "string") {
+                    valA = valA.toLowerCase();
+                    valB = valB.toLowerCase();
+                }
+            }
+
+            if (valA < valB) return sortOrder === "asc" ? -1 : 1;
+            if (valA > valB) return sortOrder === "asc" ? 1 : -1;
+            return 0;
+        });
+
+    document.getElementById("tableBody").innerHTML = filteredTasks
+        .map(({ task, originalIndex }) => task.display(originalIndex))
+        .join("");
+}
 
     async updateTask(index, newTitle, newDesc, newDueDate) {
         if (this.taskList.some((task, i) => i !== index && task.title.toLowerCase() === newTitle.toLowerCase())) {
@@ -170,7 +193,6 @@ const handler = new TaskManager();
 
 function completeTask(index) {
     handler.completeTask(index);
-    handler.update();
 }
 
 function deleteTask(index) {
@@ -232,7 +254,8 @@ async function saveTask() {
         if (!flag) return;
     }
     else {
-        if (!handler.updateTask(currentUpdateIndex, title, desc, dueDate)) return;
+        const flag = await handler.updateTask(currentUpdateIndex, title, desc, dueDate);
+        if (!flag) return;
     }
 
     handler.update();

@@ -56,7 +56,7 @@
             margin-left: auto;
             margin-right: auto;
         }
-        
+
         #searchInput {
             margin-left: 15px;
         }
@@ -64,7 +64,7 @@
         #completed {
             color: green;
         }
-        
+
         #pending {
             color: red;
         }
@@ -94,7 +94,8 @@
             width: 100%;
         }
 
-        th, td {
+        th,
+        td {
             padding: 10px;
             border: 1px solid #ccc;
             text-align: center;
@@ -104,13 +105,14 @@
             background-color: #eee;
         }
 
-        #statusFilter {
+        #statusFilter,#sortOrder, #sortField {
             padding: 10px;
             border-radius: 10px;
             border: 1px solid #ccc;
             background-color: #fff;
             font-size: 15px;
             margin-left: 10px;
+            margin-right: 20px;
             margin-bottom: 10px;
         }
     </style>
@@ -127,6 +129,18 @@
             <option value="all">All</option>
             <option value="pending">Pending</option>
             <option value="completed">Completed</option>
+        </select>
+        <label for="sortField">Sort by:</label>
+        <select id="sortField" onchange="applyFilter()">
+            <option value="status">Status</option>
+            <option value="dueDate">Due Date</option>
+            <option value="title">Title</option>
+        </select>
+
+        <label for="sortOrder">Order:</label>
+        <select id="sortOrder" onchange="applyFilter()">
+            <option value="asc">Ascending</option>
+            <option value="desc">Descending</option>
         </select>
         <input type="text" id="searchInput" placeholder="Search tasks..." oninput="applyFilter()" />
         <button onclick="addTask()">Add Task</button>
