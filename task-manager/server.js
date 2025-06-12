@@ -70,6 +70,12 @@ app.patch('/api/tasks/:index', (req, res) => {
         }
 
         tasks[index].completed = completed;
+        if (completed) {
+            tasks[index].completedAt = new Date().toISOString();
+        }
+        else {
+            delete tasks[index].completedAt;
+        }
 
         fs.writeFile(dataFile, JSON.stringify(tasks, null, 4), (err) => {
             if (err) {

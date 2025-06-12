@@ -1,22 +1,28 @@
 class Task {
-    constructor(title, description, dueDate, completed = false) {
+    constructor(title, description, dueDate, completed = false, completedAt = null) {
         this.title = title;
         this.description = description;
         this.dueDate = dueDate;
         this.completed = completed;
+        this.completedAt = completedAt;
     }
 
     markCompleted() {
         this.completed = true;
+        this.completedAt = new Date().toISOString();
     }
 
     display(index) {
+        const due = new Date(this.dueDate).toLocaleString();
+        const completedInfo = this.completedAt
+            ? `<br/><small>at ${new Date(this.completedAt).toLocaleString()}</small>`
+            : "";
         return `
             <tr class="task ${this.completed ? "completed" : ""}">
                 <td>${this.title}</td>
                 <td>${this.description}</td>
-                <td>${this.dueDate}</td>
-                <td id="${this.completed ? "completed" : "pending"}">${this.completed ? "Completed" : "Pending"}</td>
+                <td>${due}</td>
+                <td id="${this.completed ? "completed" : "pending"}">${this.completed ? "Completed" + completedInfo : "Pending"}
                 <td>
                     ${!this.completed ? `<button onclick="completeTask(${index})">Done</button>` : ""}
                     ${!this.completed ? `<button onclick="editTask(${index})">Update</button>` : ""}
@@ -32,7 +38,7 @@ class TaskManager {
         fetch('/api/tasks')
             .then(response => response.json())
             .then(data => {
-                this.taskList = data.map(x => new Task(x.title, x.description, x.dueDate, x.completed));
+                this.taskList = data.map(x => new Task(x.title, x.description, x.dueDate, x.completed, x.completedAt));
                 this.update();
             })
             .catch(err => console.error("Failed to load tasks", err));
