@@ -1,0 +1,32 @@
+[
+    {
+        "title": "Atm",
+        "description": "take cash",
+        "dueDate": "2025-06-13",
+        "completed": true
+    },
+    {
+        "title": "Bike Service",
+        "description": "Engine oil",
+        "dueDate": "2025-06-12",
+        "completed": true
+    },
+    {
+        "title": "Groceries",
+        "description": "",
+        "dueDate": "",
+        "completed": true
+    },
+    {
+        "title": "REST api",
+        "description": "add PUT, PATCH, DELETE functionality",
+        "dueDate": "2025-06-12",
+        "completed": false
+    },
+    {
+        "title": "Laundry",
+        "description": "",
+        "dueDate": "2025-06-12",
+        "completed": false
+    }
+]
