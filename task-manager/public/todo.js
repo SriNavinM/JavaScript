@@ -1,24 +1,19 @@
 class Task {
-    constructor(id, title, description, dueDate, completed = false, completedAt = null) {
+    constructor(id, title, description, dueDate, completed = false, completed_at = null) {
         this.id = id;
         this.title = title;
         this.description = description;
         this.dueDate = dueDate;
         this.completed = completed;
-        this.completedAt = completedAt;
-    }
-
-    markCompleted() {
-        this.completed = true;
-        this.completedAt = new Date().toISOString();
+        this.completed_at = completed_at;
     }
 
     display(index) {
         const dueDateObj = new Date(this.dueDate);
         const due = isNaN(dueDateObj) ? "Invalid Date" : dueDateObj.toLocaleString();
 
-        const completedInfo = this.completedAt
-            ? `<br/><small>at ${new Date(this.completedAt).toLocaleString()}</small>`
+        const completedInfo = this.completed_at
+            ? `<br/><small>at ${new Date(this.completed_at).toLocaleString()}</small>`
             : "";
 
         return `
@@ -29,6 +24,7 @@ class Task {
             <td id="${this.completed ? "completed" : "pending"}">
                 ${this.completed ? "Completed" + completedInfo : "Pending"}
             </td>
+
             <td>
                 ${!this.completed ? `<button onclick="completeTask(${index})">Done</button>` : ""}
                 ${!this.completed ? `<button onclick="editTask(${index})">Update</button>` : ""}
@@ -48,7 +44,7 @@ class TaskManager {
                 this.taskList = data.map(x => {
                     // const dateTime = new Date( x.due_date).toISOString().slice(0,16);
                     // console.log(dateTime);
-                    return new Task(x.id, x.title, x.description, x.due_date, x.completed, x.completedAt);
+                    return new Task(x.id, x.title, x.description, x.due_date, x.completed, x.completed_at);
                 });
                 this.update();
             })
@@ -79,10 +75,10 @@ class TaskManager {
 
             this.taskList.push(
                 new Task(
-                    data.id, 
-                    data.title, 
-                    data.description, 
-                    data.due_date, 
+                    data.id,
+                    data.title,
+                    data.description,
+                    data.due_date,
                     data.completed,
                     data.completed_at || null
                 )
@@ -106,11 +102,12 @@ class TaskManager {
                 body: JSON.stringify({ completed: true })
             });
 
+            const data = await response.json();
+            task.completedAt = data.completed_at;
+
             if (!response.ok) {
                 throw new Error("Failed to update task");
             }
-
-            task.markCompleted();
             this.update();
         }
         catch (err) {

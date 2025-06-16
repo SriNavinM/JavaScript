@@ -36,7 +36,7 @@ app.post('/api/tasks', async (req, res) => {
             [title, description, dueDate]
         );
         return res.status(201).json(result.rows[0]);
-    } 
+    }
     catch (err) {
         console.error(err);
         return res.status(500).json({ message: 'Failed to add task' });
@@ -47,6 +47,7 @@ app.post('/api/tasks', async (req, res) => {
 app.patch('/api/tasks/:id', async (req, res) => {
     const id = req.params.id;
     const { completed } = req.body;
+
     try {
         const result = await pool.query(
             `update tasks
@@ -56,13 +57,15 @@ app.patch('/api/tasks/:id', async (req, res) => {
             returning *`,
             [completed, id]
         );
-        return res.status(200).json({ message: 'Task Updated Succesfully'});
-    } 
+
+        return res.status(200).json(result.rows[0]);
+    }
     catch (err) {
         console.error(err);
         return res.status(500).json({ message: 'Failed to update task' });
     }
 });
+
 
 app.put('/api/tasks/:id', async (req, res) => {
     const id = req.params.id;
@@ -77,8 +80,8 @@ app.put('/api/tasks/:id', async (req, res) => {
             returning *`,
             [title, description, dueDate, id]
         );
-        return res.status(200).json({ message: 'Task Updated Succesfully'});
-    } 
+        return res.status(200).json({ message: 'Task Updated Succesfully' });
+    }
     catch (err) {
         console.error(err);
         return res.status(500).json({ message: 'Failed to update task' });
@@ -88,12 +91,12 @@ app.put('/api/tasks/:id', async (req, res) => {
 app.delete('/api/tasks/:id', async (req, res) => {
     const id = req.params.id;
     try {
-        const result = await pool.query(
+        await pool.query(
             `delete from tasks where id = $1 returning *`,
             [id]
         );
-        return res.status(200).json({ message: 'Task Deleted Succesfully'});
-    } 
+        return res.status(200).json({ message: 'Task Deleted Succesfully' });
+    }
     catch (err) {
         console.error(err);
         return res.status(500).json({ message: 'Failed to delete task' });
