@@ -6,103 +6,105 @@
     <title>Login</title>
     <style>
         body {
-            background-color: #f0f2f5;
+            background: #f0f0f0;
             display: flex;
             justify-content: center;
             align-items: center;
             height: 100vh;
         }
 
-        .login-container {
+        .auth-container {
             background: #fff;
-            padding: 30px 40px;
-            border-radius: 15px;
+            padding: 30px;
             width: 400px;
-        }
-
-        .login-container h2 {
-            margin-bottom: 30px;
             text-align: center;
         }
 
-        .login-container input[type="text"],
-        .login-container input[type="password"] {
-            width: 100%;
-            padding: 10px;
-            margin: 10px 0 15px;
-            border: 1px solid #ccc;
-            border-radius: 5px;
+        .auth-container h2 {
+            margin-bottom: 20px;
         }
 
-        .login-container button {
+        .auth-container input {
+            width: 90%;
+            padding: 10px;
+            margin: 8px 0;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+        }
+
+        .auth-container button {
             width: 100%;
             padding: 10px;
-            background-color: #007bff;
-            border: none;
+            background: #007BFF;
             color: white;
-            font-size: 16px;
-            border-radius: 5px;
+            border: none;
+            border-radius: 6px;
             cursor: pointer;
         }
 
-        .login-container button:hover {
-            background-color: #0056b3;
+        .auth-container button:hover {
+            background: #0056b3;
         }
 
-        .error {
+        .switch-link {
+            margin-top: 15px;
+            font-size: 14px;
+            cursor: pointer;
+            color: #007BFF;
+            text-decoration: underline;
+        }
+
+        #errorMsg {
             color: red;
-            margin-bottom: 10px;
             display: none;
+            margin-bottom: 10px;
         }
     </style>
 </head>
 
 <body>
+    <div class="auth-container">
+        <h2 id="formTitle">Login</h2>
+        <div id="errorMsg"></div>
 
-    <div class="login-container">
-        <h2>Login</h2>
-        <div id="error" class="error"></div>
-        <form id="loginForm">
+        <form id="authForm" onsubmit="submitAuth(event)">
             <input type="text" id="username" placeholder="Username" required />
+            <input type="email" id="email" placeholder="Email" style="display: none;" />
             <input type="password" id="password" placeholder="Password" required />
             <button type="submit">Login</button>
         </form>
+
+        <div class="switch-link" onclick="toggleForm()">Don't have an account? Create one</div>
     </div>
 
     <script>
-        document.getElementById("loginForm").addEventListener("submit", async (e) => {
-            e.preventDefault();
-            const username = document.getElementById("username").value.trim();
-            const password = document.getElementById("password").value.trim();
+        let isSignup = false;
 
-            try {
-                const response = await fetch("/api/login", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ username, password })
-                });
+        function toggleForm() {
+            isSignup = !isSignup;
 
-                const data = await response.json();
-                if (!response.ok) {
-                    document.getElementById("error").textContent = data.message || "Login failed";
-                    document.getElementById("error").style.display = "block";
-                    return;
-                }
+            const usernameField = document.getElementById("email");
+            const formTitle = document.getElementById("formTitle");
+            const switchLink = document.querySelector(".switch-link");
+            const submitBtn = document.querySelector("#authForm button");
 
-                // Save token in localStorage or cookie
-                localStorage.setItem("token", data.token);
-                alert("Login successful!");
-
-                // Redirect to the main app page (e.g., task manager)
-                window.location.href = "/";
-
-            } catch (err) {
-                document.getElementById("error").textContent = "An error occurred.";
-                document.getElementById("error").style.display = "block";
+            if (isSignup) {
+                usernameField.style.display = "block";
+                formTitle.textContent = "Create Account";
+                submitBtn.textContent = "Sign Up";
+                switchLink.textContent = "Already have an account? Login";
+            } else {
+                usernameField.style.display = "none";
+                formTitle.textContent = "Login";
+                submitBtn.textContent = "Login";
+                switchLink.textContent = "Don't have an account? Create one";
             }
-        });
-    </script>
 
+            document.getElementById("errorMsg").style.display = "none";
+        }
+
+    </script>
+    
 </body>
 
 </html>
