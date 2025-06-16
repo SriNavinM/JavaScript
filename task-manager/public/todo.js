@@ -14,63 +14,81 @@ class Task {
     }
 
     display(index) {
-        const due = new Date(this.dueDate).toLocaleString();
+        const dueDateObj = new Date(this.dueDate);
+        const due = isNaN(dueDateObj) ? "Invalid Date" : dueDateObj.toLocaleString();
+
         const completedInfo = this.completedAt
             ? `<br/><small>at ${new Date(this.completedAt).toLocaleString()}</small>`
             : "";
+
         return `
-            <tr class="task ${this.completed ? "completed" : ""}">
-                <td>${this.title}</td>
-                <td>${this.description}</td>
-                <td>${due}</td>
-                <td id="${this.completed ? "completed" : "pending"}">${this.completed ? "Completed" + completedInfo : "Pending"}</td>
-                <td>
-                    ${!this.completed ? `<button onclick="completeTask(${index})">Done</button>` : ""}
-                    ${!this.completed ? `<button onclick="editTask(${index})">Update</button>` : ""}
-                    <button onclick="deleteTask(${index})">Delete</button>
-                </td>
-            </tr>
-        `;
+        <tr class="task ${this.completed ? "completed" : ""}">
+            <td>${this.title}</td>
+            <td>${this.description}</td>
+            <td>${due}</td>
+            <td id="${this.completed ? "completed" : "pending"}">
+                ${this.completed ? "Completed" + completedInfo : "Pending"}
+            </td>
+            <td>
+                ${!this.completed ? `<button onclick="completeTask(${index})">Done</button>` : ""}
+                ${!this.completed ? `<button onclick="editTask(${index})">Update</button>` : ""}
+                <button onclick="deleteTask(${index})">Delete</button>
+            </td>
+        </tr>
+    `;
     }
+
 }
 
 class TaskManager {
     constructor() {
-        this.taskList = [];
         fetch('/api/tasks')
             .then(response => response.json())
             .then(data => {
-                this.taskList = data.map(x => new Task(x.id, x.title, x.description, x.due_date, x.completed, x.completedAt));
+                this.taskList = data.map(x => {
+                    // const dateTime = new Date( x.due_date).toISOString().slice(0,16);
+                    // console.log(dateTime);
+                    return new Task(x.id, x.title, x.description, x.due_date, x.completed, x.completedAt);
+                });
                 this.update();
             })
             .catch(err => console.error("Failed to load tasks", err));
     }
 
     async addTask(title, description, dueDate) {
-        if (this.taskList.some(task => task.title?.toLowerCase() === title.toLowerCase())) {
+        if (this.taskList.some(task => task.title.toLowerCase() === title.toLowerCase())) {
             const error = document.getElementById("err-msg");
             error.textContent = "Task with this title already exists!";
             error.style.display = "block";
             return false;
         }
-        const newTask = { title, description, dueDate, completed: false };
+        const newTask = { title, description, dueDate };
 
         try {
             const response = await fetch("/api/tasks", {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
+                headers: {
+                    "Content-Type": "application/json"
+                },
                 body: JSON.stringify(newTask)
             });
-
+            const data = await response.json();
             if (!response.ok) {
                 throw new Error("Failed to save task");
             }
 
-            const savedTask = await response.json();
-            this.taskList.push(new Task(savedTask.id, savedTask.title, savedTask.description, savedTask.dueDate, savedTask.completed, savedTask.completedAt));
+            this.taskList.push(
+                new Task(
+                    data.id, 
+                    data.title, 
+                    data.description, 
+                    data.due_date, 
+                    data.completed,
+                    data.completed_at || null
+                )
+            );
             return true;
-        }
-        catch (err) {
+        } catch (err) {
             console.error(err);
             const error = document.getElementById("err-msg");
             error.textContent = "Error saving task!";
@@ -88,55 +106,29 @@ class TaskManager {
                 body: JSON.stringify({ completed: true })
             });
 
-            if (!response.ok) throw new Error("Failed to update task");
+            if (!response.ok) {
+                throw new Error("Failed to update task");
+            }
 
             task.markCompleted();
             this.update();
-        } catch (err) {
+        }
+        catch (err) {
             console.error(err);
         }
     }
 
     async deleteTask(index) {
-        const task = this.taskList[index];
         try {
-            const response = await fetch(`/api/tasks/${task.id}`, {
+            const response = await fetch(`/api/tasks/${this.taskList[index].id}`, {
                 method: 'DELETE'
             });
-
-            if (!response.ok) throw new Error("Failed to delete task");
+            if (!response.ok) {
+                throw new Error("Failed to delete task");
+            }
 
             this.taskList.splice(index, 1);
             this.update();
-        } catch (err) {
-            console.error(err);
-        }
-    }
-
-    async updateTask(index, newTitle, newDesc, newDueDate) {
-        if (this.taskList.some((task, i) => i !== index && task.title?.toLowerCase() === newTitle.toLowerCase())) {
-            const error = document.getElementById("err-msg");
-            error.textContent = "Task with this title already exists!";
-            error.style.display = "block";
-            return false;
-        }
-
-        const task = this.taskList[index];
-
-        try {
-            const response = await fetch(`/api/tasks/${task.id}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ title: newTitle, description: newDesc, dueDate: newDueDate })
-            });
-
-            if (!response.ok) throw new Error("Failed to update task");
-
-            task.title = newTitle;
-            task.description = newDesc;
-            task.dueDate = newDueDate;
-            this.update();
-            return true;
         } catch (err) {
             console.error(err);
         }
@@ -153,7 +145,7 @@ class TaskManager {
             .filter(({ task }) => {
                 const matchStatus =
                     filter === "all" || (filter === "pending" && !task.completed) || (filter === "completed" && task.completed);
-                const matchSearch = task.title?.toLowerCase().includes(search);
+                const matchSearch = task.title.toLowerCase().includes(search);
                 return matchStatus && matchSearch;
             })
             .sort((a, b) => {
@@ -184,6 +176,36 @@ class TaskManager {
             .map(({ task, originalIndex }) => task.display(originalIndex))
             .join("");
     }
+
+    async updateTask(index, newTitle, newDesc, newDueDate) {
+        if (this.taskList.some((task, i) => i !== index && task.title.toLowerCase() === newTitle.toLowerCase())) {
+            const error = document.getElementById("err-msg");
+            error.textContent = "Task with this title already exists!";
+            error.style.display = "block";
+            return false;
+        }
+
+        try {
+            const response = await fetch(`/api/tasks/${this.taskList[index].id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ title: newTitle, description: newDesc, dueDate: newDueDate })
+            });
+
+            if (!response.ok) {
+                throw new Error("Failed to update task");
+            }
+
+            this.taskList[index].title = newTitle;
+            this.taskList[index].description = newDesc;
+            this.taskList[index].dueDate = newDueDate;
+            this.update();
+            return true;
+        }
+        catch (err) {
+            console.error(err);
+        }
+    }
 }
 
 const handler = new TaskManager();
@@ -194,9 +216,20 @@ function completeTask(index) {
 
 function deleteTask(index) {
     handler.deleteTask(index);
+    handler.update();
 }
 
 let currentUpdateIndex = null;
+
+function formatToDatetimeLocal(dateString) {
+    const date = new Date(dateString);
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    const hours = String(date.getHours()).padStart(2, "0");
+    const minutes = String(date.getMinutes()).padStart(2, "0");
+    return `${year}-${month}-${day}T${hours}:${minutes}`;
+}
 
 function openModal(isEdit = false, index = null) {
     const modalTitle = document.getElementById("modalTitle");
@@ -205,35 +238,19 @@ function openModal(isEdit = false, index = null) {
     if (isEdit) {
         const task = handler.taskList[index];
         document.getElementById("title").value = task.title;
-        document.getElementById("desc").value = task.description;
-        document.getElementById("dueDate").value = formatDateTime(task.dueDate);
-
+        document.getElementById("description").value = task.description;
+        document.getElementById("dueDate").value = formatToDatetimeLocal(task.dueDate);
         modalTitle.textContent = "Update Task";
-    } else {
+    }
+    else {
         document.getElementById("title").value = "";
-        document.getElementById("desc").value = "";
+        document.getElementById("description").value = "";
         document.getElementById("dueDate").value = "";
         modalTitle.textContent = "Add Task";
     }
 
     document.getElementById("updateModal").style.display = "block";
 }
-
-function formatDateTime(dateStr) {
-    if (!dateStr) return "";
-
-    const date = new Date(dateStr);
-    const pad = n => String(n).padStart(2, '0');
-
-    const yyyy = date.getFullYear();
-    const mm = pad(date.getMonth() + 1);
-    const dd = pad(date.getDate());
-    const hh = pad(date.getHours());
-    const min = pad(date.getMinutes());
-
-    return `${yyyy}-${mm}-${dd}T${hh}:${min}`;
-}
-
 
 function addTask() {
     openModal();
@@ -251,24 +268,24 @@ function closeModal() {
 
 async function saveTask() {
     const title = document.getElementById("title").value.trim();
-    const desc = document.getElementById("desc").value.trim();
+    const description = document.getElementById("description").value.trim();
     const dueDate = document.getElementById("dueDate").value;
 
-    if (title === "") {
+    if (title === "" || dueDate === "") {
         const error = document.getElementById("err-msg");
-        error.textContent = "Title is required";
+        error.textContent = "Title and Due Date are required";
         error.style.display = "block";
         return;
     }
 
-    let flag = false;
     if (currentUpdateIndex == null) {
-        flag = await handler.addTask(title, desc, dueDate);
-    } else {
-        flag = await handler.updateTask(currentUpdateIndex, title, desc, dueDate);
+        const flag = await handler.addTask(title, description, dueDate);
+        if (!flag) return;
     }
-
-    if (!flag) return;
+    else {
+        const flag = await handler.updateTask(currentUpdateIndex, title, description, dueDate);
+        if (!flag) return;
+    }
 
     handler.update();
     closeModal();

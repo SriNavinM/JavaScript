@@ -1,11 +1,10 @@
 
 const express = require('express');
-const fs = require('fs');
 const path = require('path');
 const { json } = require('stream/consumers');
 const pool = require('./db');
 
-const dataFile = path.join(__dirname, 'data', 'tasks.json');
+// const dataFile = path.join(__dirname, 'data', 'tasks.json');
 
 const app = express();
 
@@ -18,12 +17,8 @@ app.get('/', (req, res) => {
 
 app.get('/api/tasks', async (req, res) => {
     try {
-        const result = await pool.query(
-            `SELECT id, title, description,
-            to_char(due_date, 'YYYY-MM-DD"T"HH24:MI') AS due_date,
-            completed, completed_at
-            FROM tasks ORDER BY completed`);
-        res.json(result.rows);
+        const result = await pool.query(`select * from tasks order by completed`);
+        return res.json(result.rows);
     }
     catch (err) {
         console.error('Error fetching tasks');
@@ -32,13 +27,13 @@ app.get('/api/tasks', async (req, res) => {
 });
 
 app.post('/api/tasks', async (req, res) => {
-    const { title, desc, dueDate } = req.body;
+    const { title, description, dueDate } = req.body;
     try {
         const result = await pool.query(
-            `insert into tasks(title, description, due_date, completed)
-            values ($1, $2, $3, false)
+            `insert into tasks(title, description, due_date)
+            values ($1, $2, $3)
             returning *`,
-            [title, desc, dueDate]
+            [title, description, dueDate]
         );
         return res.status(201).json(result.rows[0]);
     } 
