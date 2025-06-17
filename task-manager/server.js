@@ -2,6 +2,7 @@
 const express = require('express');
 const path = require('path');
 const pool = require('./db');
+const bcrypt = require('bcrypt');
 
 // const dataFile = path.join(__dirname, 'data', 'tasks.json');
 
@@ -19,7 +20,8 @@ app.post('/register', async (req, res) => {
             return res.status(400).json({ error: "Username already taken" });
         }
 
-        const result = await pool.query(`Insert into users (username,password) values ($1, $2) returning *`, [username, password]);
+        const hashedPassword = await bcrypt.hash(password, 10);
+        const result = await pool.query(`Insert into users (username,password) values ($1, $2) returning *`, [username, hashedPassword]);
 
         return res.status(201).json({ success: true, user_id: result.rows[0].user_id });
     } catch (err) {
@@ -37,7 +39,8 @@ app.post('/login', async (req, res) => {
             return res.status(400).json({ error: "Invalid username" });;
         }
         const user = result.rows[0];
-        if(user.password !== password) {
+        const isMatch = await bcrypt.compare(password, user.password);
+        if(!isMatch) {
             return res.status(400).json({ error: "Incorrect password" });
         }
         return res.status(200).json({ success: true, user_id: user.user_id });
