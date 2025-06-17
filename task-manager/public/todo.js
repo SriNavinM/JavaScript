@@ -38,17 +38,21 @@ class Task {
 
 class TaskManager {
     constructor() {
-        fetch('/api/tasks')
-            .then(response => response.json())
-            .then(data => {
-                this.taskList = data.map(x => {
-                    // const dateTime = new Date( x.due_date).toISOString().slice(0,16);
-                    // console.log(dateTime);
-                    return new Task(x.id, x.title, x.description, x.due_date, x.completed, x.completed_at);
-                });
-                this.update();
-            })
-            .catch(err => console.error("Failed to load tasks", err));
+        this.taskList = [];
+    }
+
+    async load() {
+        const user_id = localStorage.getItem("user_id");
+        try {
+            const response = await fetch(`/api/tasks?user_id=${user_id}`);
+            const data = await response.json();
+            this.taskList = data.map(x =>
+                new Task(x.id, x.title, x.description, x.due_date, x.completed, x.completed_at)
+            );
+            this.update();
+        } catch (err) {
+            console.error("Failed to load tasks", err);
+        }
     }
 
     async addTask(title, description, dueDate) {
@@ -58,10 +62,11 @@ class TaskManager {
             error.style.display = "block";
             return false;
         }
-        const newTask = { title, description, dueDate };
+        const user_id = localStorage.getItem("user_id");
+        const newTask = { title, description, dueDate, user_id };
 
         try {
-            const response = await fetch("/api/tasks", {
+            const response = await fetch(`/api/tasks?user_id=${user_id}`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json"
@@ -95,11 +100,12 @@ class TaskManager {
 
     async completeTask(index) {
         const task = this.taskList[index];
+        const user_id = localStorage.getItem("user_id");
         try {
             const response = await fetch(`/api/tasks/${task.id}`, {
                 method: 'PATCH',
                 headers: { "Content-Type": 'application/json' },
-                body: JSON.stringify({ completed: true })
+                body: JSON.stringify({ completed: true, user_id })
             });
 
             const data = await response.json();
@@ -116,9 +122,12 @@ class TaskManager {
     }
 
     async deleteTask(index) {
+        const user_id = localStorage.getItem("user_id");
         try {
             const response = await fetch(`/api/tasks/${this.taskList[index].id}`, {
-                method: 'DELETE'
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ user_id })
             });
             if (!response.ok) {
                 throw new Error("Failed to delete task");
@@ -182,11 +191,12 @@ class TaskManager {
             return false;
         }
 
+        const user_id = localStorage.getItem("user_id");
         try {
             const response = await fetch(`/api/tasks/${this.taskList[index].id}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ title: newTitle, description: newDesc, dueDate: newDueDate })
+                body: JSON.stringify({ title: newTitle, description: newDesc, dueDate: newDueDate, user_id })
             });
 
             if (!response.ok) {
@@ -206,6 +216,7 @@ class TaskManager {
 }
 
 const handler = new TaskManager();
+handler.load();
 
 function completeTask(index) {
     handler.completeTask(index);
@@ -290,6 +301,10 @@ async function saveTask() {
 
 function applyFilter() {
     handler.update();
+}
+
+function logout() {
+    window.location.href = "/";
 }
 
 window.onload = () => {

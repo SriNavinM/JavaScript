@@ -13,45 +13,37 @@
             height: 100vh;
         }
 
-        .auth-container {
+        .container {
             background: #fff;
             padding: 30px;
             width: 400px;
             text-align: center;
         }
 
-        .auth-container h2 {
+        h2 {
             margin-bottom: 20px;
         }
 
-        .auth-container input {
-            width: 90%;
+        input {
+            width: 94%;
             padding: 10px;
-            margin: 8px 0;
+            margin: 10px 0;
             border: 1px solid #ccc;
-            border-radius: 6px;
+            border-radius: 10px;
         }
 
-        .auth-container button {
+        button {
             width: 100%;
             padding: 10px;
+            margin: 10px 0;
             background: #007BFF;
             color: white;
             border: none;
-            border-radius: 6px;
-            cursor: pointer;
+            border-radius: 10px;
         }
 
-        .auth-container button:hover {
+        button:hover {
             background: #0056b3;
-        }
-
-        .switch-link {
-            margin-top: 15px;
-            font-size: 14px;
-            cursor: pointer;
-            color: #007BFF;
-            text-decoration: underline;
         }
 
         #errorMsg {
@@ -63,48 +55,50 @@
 </head>
 
 <body>
-    <div class="auth-container">
+    <div class="container">
         <h2 id="formTitle">Login</h2>
         <div id="errorMsg"></div>
 
-        <form id="authForm" onsubmit="submitAuth(event)">
-            <input type="text" id="username" placeholder="Username" required />
-            <input type="email" id="email" placeholder="Email" style="display: none;" />
-            <input type="password" id="password" placeholder="Password" required />
+        <form id="loginForm">
+            <input type="text" id="username" name="username" placeholder="Username" required />
+            <input type="password" id="password" name="password" placeholder="Password" required />
             <button type="submit">Login</button>
         </form>
 
-        <div class="switch-link" onclick="toggleForm()">Don't have an account? Create one</div>
     </div>
 
     <script>
-        let isSignup = false;
+        document.getElementById("loginForm").addEventListener("submit", async function (event) {
+            event.preventDefault();
 
-        function toggleForm() {
-            isSignup = !isSignup;
+            const username = document.getElementById("username").value.trim();
+            const password = document.getElementById("password").value.trim();
+            const errorDiv = document.getElementById("errorMsg");
 
-            const usernameField = document.getElementById("email");
-            const formTitle = document.getElementById("formTitle");
-            const switchLink = document.querySelector(".switch-link");
-            const submitBtn = document.querySelector("#authForm button");
+            try {
+                const response = await fetch("/login", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ username, password })
+                });
 
-            if (isSignup) {
-                usernameField.style.display = "block";
-                formTitle.textContent = "Create Account";
-                submitBtn.textContent = "Sign Up";
-                switchLink.textContent = "Already have an account? Login";
-            } else {
-                usernameField.style.display = "none";
-                formTitle.textContent = "Login";
-                submitBtn.textContent = "Login";
-                switchLink.textContent = "Don't have an account? Create one";
+                const result = await response.json();
+
+                if (response.ok && result.success) {
+                    localStorage.setItem("user_id", result.user_id);
+                    window.location.href = "/home.html";
+                } else {
+                    errorDiv.style.display = "block";
+                    errorDiv.textContent = result.error || "Login failed";
+                }
+            } catch (err) {
+                errorDiv.style.display = "block";
+                errorDiv.textContent = "Something went wrong. Please try again.";
             }
-
-            document.getElementById("errorMsg").style.display = "none";
-        }
-
+        });
     </script>
-    
+
+
 </body>
 
 </html>

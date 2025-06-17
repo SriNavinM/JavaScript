@@ -10,14 +10,39 @@ const app = express();
 
 app.use(express.json());
 app.use(express.static('public'));
+app.use(express.urlencoded({ extended: true }));
+
+app.post('/login', async (req, res) => {
+    const { username, password } = req.body;
+    try {
+        const result = await pool.query(`select * from users where username = $1`,[username]);
+        if(result.rows.length === 0) {
+            return res.status(400).json({ error: "Invalid username" });;
+        }
+        const user = result.rows[0];
+        if(user.password !== password) {
+            return res.status(400).json({ error: "Incorrect password" });
+        }
+        return res.status(200).json({ success: true, user_id: user.user_id });
+    }
+    catch (err) {
+        console.error(err);
+        res.status(500).json({ error: "Server error" });
+    }
+})
 
 app.get('/', (req, res) => {
-    res.sendFile(__dirname + '/public/index.html');
+    res.sendFile(__dirname + '/public/login.html');
 });
 
 app.get('/api/tasks', async (req, res) => {
+    const user_id = req.query.user_id;
+    if (!user_id) {
+        return res.status(400).json({ message: 'User ID is required' });
+    }
+
     try {
-        const result = await pool.query(`select * from tasks order by completed`);
+        const result = await pool.query(`select * from tasks where user_id = $1 order by completed`, [user_id]);
         return res.json(result.rows);
     }
     catch (err) {
@@ -27,13 +52,13 @@ app.get('/api/tasks', async (req, res) => {
 });
 
 app.post('/api/tasks', async (req, res) => {
-    const { title, description, dueDate } = req.body;
+    const { title, description, dueDate, user_id } = req.body;
     try {
         const result = await pool.query(
-            `insert into tasks(title, description, due_date)
-            values ($1, $2, $3)
+            `insert into tasks(title, description, due_date, user_id)
+            values ($1, $2, $3, $4)
             returning *`,
-            [title, description, dueDate]
+            [title, description, dueDate, user_id]
         );
         return res.status(201).json(result.rows[0]);
     }
@@ -46,16 +71,16 @@ app.post('/api/tasks', async (req, res) => {
 
 app.patch('/api/tasks/:id', async (req, res) => {
     const id = req.params.id;
-    const { completed } = req.body;
+    const { completed, user_id } = req.body;
 
     try {
         const result = await pool.query(
             `update tasks
             set completed = $1,
                 completed_at = case when $1 then current_timestamp else null end
-            where id = $2
+            where id = $2 and user_id = $3
             returning *`,
-            [completed, id]
+            [completed, id, user_id]
         );
 
         return res.status(200).json(result.rows[0]);
@@ -69,16 +94,16 @@ app.patch('/api/tasks/:id', async (req, res) => {
 
 app.put('/api/tasks/:id', async (req, res) => {
     const id = req.params.id;
-    const { title, description, dueDate } = req.body;
+    const { title, description, dueDate, user_id } = req.body;
     try {
         const result = await pool.query(
             `update tasks
             set title = $1,
                 description = $2,
                 due_date = $3
-            where id = $4
+            where id = $4 and user_id = $5
             returning *`,
-            [title, description, dueDate, id]
+            [title, description, dueDate, id, user_id]
         );
         return res.status(200).json({ message: 'Task Updated Succesfully' });
     }
@@ -90,10 +115,11 @@ app.put('/api/tasks/:id', async (req, res) => {
 
 app.delete('/api/tasks/:id', async (req, res) => {
     const id = req.params.id;
+    const { user_id } = req.body;
     try {
         await pool.query(
-            `delete from tasks where id = $1 returning *`,
-            [id]
+            `delete from tasks where id = $1 and user_id = $2 returning *`,
+            [id, user_id]
         );
         return res.status(200).json({ message: 'Task Deleted Succesfully' });
     }
