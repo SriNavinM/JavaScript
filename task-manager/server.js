@@ -1,7 +1,7 @@
 
 const express = require('express');
 const path = require('path');
-const pool = require('./db');
+const db = require('./db');
 const bcrypt = require('bcrypt');
 
 // const dataFile = path.join(__dirname, 'data', 'tasks.json');
@@ -15,13 +15,13 @@ app.use(express.urlencoded({ extended: true }));
 app.post('/register', async (req, res) => {
     const { username, password } = req.body;
     try {
-        const checkUser = await pool.query(`select * from users where username = $1`, [username]);
+        const checkUser = await db.query(`select * from users where username = $1`, [username]);
         if (checkUser.rows.length > 0) {
             return res.status(400).json({ error: "Username already taken" });
         }
 
         const hashedPassword = await bcrypt.hash(password, 10);
-        const result = await pool.query(`Insert into users (username,password) values ($1, $2) returning *`, [username, hashedPassword]);
+        const result = await db.query(`Insert into users (username,password) values ($1, $2) returning *`, [username, hashedPassword]);
 
         return res.status(201).json({ success: true, user_id: result.rows[0].user_id });
     } catch (err) {
@@ -34,7 +34,7 @@ app.post('/register', async (req, res) => {
 app.post('/login', async (req, res) => {
     const { username, password } = req.body;
     try {
-        const result = await pool.query(`select * from users where username = $1`,[username]);
+        const result = await db.query(`select * from users where username = $1`,[username]);
         if(result.rows.length === 0) {
             return res.status(400).json({ error: "Invalid username" });;
         }
@@ -62,7 +62,7 @@ app.get('/api/tasks', async (req, res) => {
     }
 
     try {
-        const result = await pool.query(`select * from tasks where user_id = $1 order by completed`, [user_id]);
+        const result = await db.query(`select * from tasks where user_id = $1 order by completed`, [user_id]);
         return res.json(result.rows);
     }
     catch (err) {
@@ -74,7 +74,7 @@ app.get('/api/tasks', async (req, res) => {
 app.post('/api/tasks', async (req, res) => {
     const { title, description, dueDate, user_id } = req.body;
     try {
-        const result = await pool.query(
+        const result = await db.query(
             `insert into tasks(title, description, due_date, user_id)
             values ($1, $2, $3, $4)
             returning *`,
@@ -94,7 +94,7 @@ app.patch('/api/tasks/:id', async (req, res) => {
     const { completed, user_id } = req.body;
 
     try {
-        const result = await pool.query(
+        const result = await db.query(
             `update tasks
             set completed = $1,
                 completed_at = case when $1 then current_timestamp else null end
@@ -116,7 +116,7 @@ app.put('/api/tasks/:id', async (req, res) => {
     const id = req.params.id;
     const { title, description, dueDate, user_id } = req.body;
     try {
-        const result = await pool.query(
+        const result = await db.query(
             `update tasks
             set title = $1,
                 description = $2,
@@ -137,7 +137,7 @@ app.delete('/api/tasks/:id', async (req, res) => {
     const id = req.params.id;
     const { user_id } = req.body;
     try {
-        await pool.query(
+        await db.query(
             `delete from tasks where id = $1 and user_id = $2 returning *`,
             [id, user_id]
         );
