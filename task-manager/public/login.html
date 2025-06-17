@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <title>Login</title>
@@ -18,6 +17,8 @@
             padding: 30px;
             width: 400px;
             text-align: center;
+            border-radius: 10px;
+            box-shadow: 0px 0px 10px rgba(0,0,0,0.2);
         }
 
         h2 {
@@ -51,54 +52,84 @@
             display: none;
             margin-bottom: 10px;
         }
+
+        #toggleMode {
+            background: none;
+            border: none;
+            color: #007BFF;
+            text-decoration: underline;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        #toggleMode:hover {
+            color: #0056b3;
+        }
     </style>
 </head>
-
 <body>
-    <div class="container">
-        <h2 id="formTitle">Login</h2>
-        <div id="errorMsg"></div>
 
-        <form id="loginForm">
-            <input type="text" id="username" name="username" placeholder="Username" required />
-            <input type="password" id="password" name="password" placeholder="Password" required />
-            <button type="submit">Login</button>
-        </form>
+<div class="container">
+    <h2 id="formTitle">Login</h2>
+    <div id="errorMsg"></div>
 
-    </div>
+    <form id="authForm">
+        <input type="text" id="username" name="username" placeholder="Username" required />
+        <input type="password" id="password" name="password" placeholder="Password" required />
+        <button type="submit">Login</button>
+    </form>
 
-    <script>
-        document.getElementById("loginForm").addEventListener("submit", async function (event) {
-            event.preventDefault();
+    <p>
+        <button id="toggleMode">Don't have an account? Create one</button>
+    </p>
+</div>
 
-            const username = document.getElementById("username").value.trim();
-            const password = document.getElementById("password").value.trim();
-            const errorDiv = document.getElementById("errorMsg");
+<script>
+    const form = document.getElementById("authForm");
+    const errorDiv = document.getElementById("errorMsg");
+    const toggleBtn = document.getElementById("toggleMode");
+    const title = document.getElementById("formTitle");
+    const submitBtn = form.querySelector("button");
 
-            try {
-                const response = await fetch("/login", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ username, password })
-                });
+    let isLoginMode = true;
 
-                const result = await response.json();
+    toggleBtn.addEventListener("click", () => {
+        isLoginMode = !isLoginMode;
+        title.textContent = isLoginMode ? "Login" : "Create Account";
+        submitBtn.textContent = isLoginMode ? "Login" : "Create Account";
+        toggleBtn.textContent = isLoginMode ? "Don't have an account? Create one" : "Already have an account? Login";
+        errorDiv.style.display = "none";
+    });
 
-                if (response.ok && result.success) {
-                    localStorage.setItem("user_id", result.user_id);
-                    window.location.href = "/home.html";
-                } else {
-                    errorDiv.style.display = "block";
-                    errorDiv.textContent = result.error || "Login failed";
-                }
-            } catch (err) {
+    form.addEventListener("submit", async function (event) {
+        event.preventDefault();
+
+        const username = document.getElementById("username").value.trim();
+        const password = document.getElementById("password").value.trim();
+
+        try {
+            const url = isLoginMode ? "/login" : "/register";
+            const response = await fetch(url, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ username, password })
+            });
+
+            const result = await response.json();
+
+            if (response.ok && result.success) {
+                localStorage.setItem("user_id", result.user_id);
+                window.location.href = "/home.html";
+            } else {
                 errorDiv.style.display = "block";
-                errorDiv.textContent = "Something went wrong. Please try again.";
+                errorDiv.textContent = result.error || "Operation failed";
             }
-        });
-    </script>
-
+        } catch (err) {
+            errorDiv.style.display = "block";
+            errorDiv.textContent = "Something went wrong. Please try again.";
+        }
+    });
+</script>
 
 </body>
-
 </html>

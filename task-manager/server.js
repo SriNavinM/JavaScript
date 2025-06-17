@@ -1,7 +1,6 @@
 
 const express = require('express');
 const path = require('path');
-const { json } = require('stream/consumers');
 const pool = require('./db');
 
 // const dataFile = path.join(__dirname, 'data', 'tasks.json');
@@ -11,6 +10,24 @@ const app = express();
 app.use(express.json());
 app.use(express.static('public'));
 app.use(express.urlencoded({ extended: true }));
+
+app.post('/register', async (req, res) => {
+    const { username, password } = req.body;
+    try {
+        const checkUser = await pool.query(`select * from users where username = $1`, [username]);
+        if (checkUser.rows.length > 0) {
+            return res.status(400).json({ error: "Username already taken" });
+        }
+
+        const result = await pool.query(`Insert into users (username,password) values ($1, $2) returning *`, [username, password]);
+
+        return res.status(201).json({ success: true, user_id: result.rows[0].user_id });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: "Server error during registration" });
+    }
+});
+
 
 app.post('/login', async (req, res) => {
     const { username, password } = req.body;
