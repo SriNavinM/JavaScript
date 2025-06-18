@@ -109,6 +109,7 @@ class TaskManager {
             });
 
             const data = await response.json();
+            task.completed = true;
             task.completedAt = data.completed_at;
 
             if (!response.ok) {

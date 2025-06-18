@@ -1,8 +1,9 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
-    <title>Login</title>
+    <title>Login / Create Account</title>
     <style>
         body {
             background: #f0f0f0;
@@ -18,7 +19,7 @@
             width: 400px;
             text-align: center;
             border-radius: 10px;
-            box-shadow: 0px 0px 10px rgba(0,0,0,0.2);
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.2);
         }
 
         h2 {
@@ -67,69 +68,189 @@
         }
     </style>
 </head>
+
 <body>
+    <div class="container">
+        <h2 id="formTitle">Login</h2>
+        <div id="errorMsg"></div>
 
-<div class="container">
-    <h2 id="formTitle">Login</h2>
-    <div id="errorMsg"></div>
+        <form id="authForm">
+            <input type="text" id="username" name="username" placeholder="Username" required />
+            <input type="email" id="email" name="email" placeholder="Email" style="display: none;" />
+            <input type="text" id="otp" name="otp" placeholder="Enter OTP" style="display: none;" />
+            <input type="password" id="password" name="password" placeholder="Password" />
+            <input type="password" id="re-password" name="re-password" placeholder="Re-enter Password" style="display: none;" />
 
-    <form id="authForm">
-        <input type="text" id="username" name="username" placeholder="Username" required />
-        <input type="password" id="password" name="password" placeholder="Password" required />
-        <button type="submit">Login</button>
-    </form>
+            <button type="submit" id="submitBtn">Login</button>
+            <button type="button" id="verifyOtpBtn" style="display: none;">Verify OTP</button>
+        </form>
 
-    <p>
-        <button id="toggleMode">Don't have an account? Create one</button>
-    </p>
-</div>
+        <p>
+            <button id="toggleMode">Don't have an account? Create one</button>
+        </p>
+    </div>
 
-<script>
-    const form = document.getElementById("authForm");
-    const errorDiv = document.getElementById("errorMsg");
-    const toggleBtn = document.getElementById("toggleMode");
-    const title = document.getElementById("formTitle");
-    const submitBtn = form.querySelector("button");
+    <script>
+        const form = document.getElementById("authForm");
+        const errorDiv = document.getElementById("errorMsg");
+        const toggleBtn = document.getElementById("toggleMode");
+        const title = document.getElementById("formTitle");
+        const submitBtn = document.getElementById("submitBtn");
+        const verifyOtpBtn = document.getElementById("verifyOtpBtn");
 
-    let isLoginMode = true;
+        const usernameInput = document.getElementById("username");
+        const emailInput = document.getElementById("email");
+        const passwordInput = document.getElementById("password");
+        const rePasswordInput = document.getElementById("re-password");
+        const otpInput = document.getElementById("otp");
 
-    toggleBtn.addEventListener("click", () => {
-        isLoginMode = !isLoginMode;
-        title.textContent = isLoginMode ? "Login" : "Create Account";
-        submitBtn.textContent = isLoginMode ? "Login" : "Create Account";
-        toggleBtn.textContent = isLoginMode ? "Don't have an account? Create one" : "Already have an account? Login";
-        errorDiv.style.display = "none";
-    });
+        let isLoginMode = true;
+        let otpVerified = false;
 
-    form.addEventListener("submit", async function (event) {
-        event.preventDefault();
+        toggleBtn.addEventListener("click", () => {
+            isLoginMode = !isLoginMode;
+            otpVerified = false;
 
-        const username = document.getElementById("username").value.trim();
-        const password = document.getElementById("password").value.trim();
+            title.textContent = isLoginMode ? "Login" : "Create Account";
+            submitBtn.textContent = isLoginMode ? "Login" : "Send OTP";
+            toggleBtn.textContent = isLoginMode ? "Don't have an account? Create one" : "Already have an account? Login";
 
-        try {
-            const url = isLoginMode ? "/login" : "/register";
-            const response = await fetch(url, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ username, password })
-            });
+            errorDiv.style.display = "none";
 
-            const result = await response.json();
+            emailInput.style.display = isLoginMode ? "none" : "block";
+            otpInput.style.display = "none";
+            passwordInput.style.display = isLoginMode ? "block" : "none";
+            passwordInput.value = "";
+            rePasswordInput.style.display = "none";
+            verifyOtpBtn.style.display = "none";
+        });
 
-            if (response.ok && result.success) {
-                localStorage.setItem("user_id", result.user_id);
-                window.location.href = "/home.html";
+        form.addEventListener("submit", async function (event) {
+            event.preventDefault();
+
+            const username = usernameInput.value.trim();
+            const password = passwordInput.value.trim();
+            const rePassword = rePasswordInput.value.trim();
+            const email = emailInput.value.trim();
+
+            if (isLoginMode) {
+                try {
+                    const response = await fetch("/login", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ username, password })
+                    });
+
+                    const result = await response.json();
+                    if (response.ok && result.success) {
+                        localStorage.setItem("user_id", result.user_id);
+                        window.location.href = "/home.html";
+                    } else {
+                        errorDiv.style.display = "block";
+                        errorDiv.style.color = "red";
+                        errorDiv.textContent = result.error || "Login failed";
+                    }
+                } catch (err) {
+                    errorDiv.style.display = "block";
+                    errorDiv.style.color = "red";
+                    errorDiv.textContent = "Something went wrong. Please try again.";
+                }
             } else {
-                errorDiv.style.display = "block";
-                errorDiv.textContent = result.error || "Operation failed";
-            }
-        } catch (err) {
-            errorDiv.style.display = "block";
-            errorDiv.textContent = "Something went wrong. Please try again.";
-        }
-    });
-</script>
+                try {
+                    const response = await fetch("/send-otp", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ username, email })
+                    });
 
+                    const result = await response.json();
+                    if (response.ok && result.success) {
+                        otpSent = true;
+
+                        otpInput.style.display = "block";
+                        verifyOtpBtn.style.display = "block";
+                        submitBtn.style.display = "none";
+
+                        errorDiv.style.display = "block";
+                        errorDiv.style.color = "green";
+                        errorDiv.textContent = "OTP sent to your email.";
+                    } else {
+                        errorDiv.style.display = "block";
+                        errorDiv.style.color = "red";
+                        errorDiv.textContent = result.error || "Failed to send OTP.";
+                    }
+                } catch (err) {
+                    errorDiv.style.display = "block";
+                    errorDiv.style.color = "red";
+                    errorDiv.textContent = "Something went wrong. Please try again.";
+                }
+            }
+        });
+
+        verifyOtpBtn.addEventListener("click", async () => {
+            const username = document.getElementById("username").value.trim();
+            const email = emailInput.value.trim();
+            const otp = otpInput.value.trim();
+
+            try {
+                const response = await fetch("/verify-otp", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ username, email, otp })
+                });
+
+                const result = await response.json();
+
+                if (response.ok && result.success) {
+                    passwordInput.style.display = "block";
+                    rePasswordInput.style.display = "block";
+                    verifyOtpBtn.style.display = "none";
+                    otpInput.style.display = "none";
+                    submitBtn.textContent = "Create Account";
+                    submitBtn.style.display = "block";
+                    errorDiv.textContent = "OTP Verified";
+
+                    submitBtn.onclick = async function () {
+                        const password = passwordInput.value.trim();
+                        const confirmPassword = rePasswordInput.value.trim();
+
+                        if (password !== confirmPassword) {
+                            errorDiv.style.display = "block";
+                            errorDiv.style.color = "red";
+                            errorDiv.textContent = "Passwords do not match!";
+                            return;
+                        }
+
+                        const response = await fetch("/register", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ username, password, email })
+                        });
+
+                        const result = await response.json();
+
+                        if (response.ok && result.success) {
+                            localStorage.setItem("user_id", result.user_id);
+                            window.location.href = "/home.html";
+                        } else {
+                            errorDiv.style.display = "block";
+                            errorDiv.style.color = "red";
+                            errorDiv.textContent = registerResult.error || "Registration failed.";
+                        }
+                    };
+                } else {
+                    errorDiv.style.display = "block";
+                    errorDiv.style.color = "red";
+                    errorDiv.textContent = result.error || "OTP verification failed.";
+                }
+            } catch (err) {
+                errorDiv.style.display = "block";
+                errorDiv.style.color = "red";
+                errorDiv.textContent = "Something went wrong. Please try again.";
+            }
+        });
+
+    </script>
 </body>
+
 </html>
