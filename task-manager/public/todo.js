@@ -110,7 +110,7 @@ class TaskManager {
 
             const data = await response.json();
             task.completed = true;
-            task.completedAt = data.completed_at;
+            task.completed_at = data.completed_at;
 
             if (!response.ok) {
                 throw new Error("Failed to update task");
@@ -305,6 +305,7 @@ function applyFilter() {
 }
 
 function logout() {
+    localStorage.removeItem("user_id");
     window.location.href = "/";
 }
 

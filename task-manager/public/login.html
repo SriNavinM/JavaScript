@@ -54,16 +54,20 @@
             margin-bottom: 10px;
         }
 
-        #toggleMode, #forgotPasswordBtn {
+        #toggleMode,
+        #forgotPasswordBtn {
             background: none;
             border: none;
+            margin: 0;
+            padding: 0;
             color: #007BFF;
             text-decoration: underline;
             cursor: pointer;
             font-size: 14px;
         }
 
-        #toggleMode:hover, #forgotPasswordBtn:hover {
+        #toggleMode:hover,
+        #forgotPasswordBtn:hover {
             color: #0056b3;
         }
     </style>
@@ -79,7 +83,8 @@
             <input type="email" id="email" name="email" placeholder="Email" style="display: none;" />
             <input type="text" id="otp" name="otp" placeholder="Enter OTP" style="display: none;" />
             <input type="password" id="password" name="password" placeholder="Password" />
-            <input type="password" id="re-password" name="re-password" placeholder="Re-enter Password" style="display: none;" />
+            <input type="password" id="re-password" name="re-password" placeholder="Re-enter Password"
+                style="display: none;" />
 
             <button type="submit" id="submitBtn">Login</button>
             <button type="button" id="verifyOtpBtn" style="display: none;">Verify OTP</button>
@@ -88,7 +93,7 @@
         <p>
             <button id="toggleMode">Don't have an account? Create one</button>
         </p>
-        <p id="forgotPassword">
+        <p id="forgotPasswordWrapper">
             <button id="forgotPasswordBtn">Forgot Password?</button>
         </p>
     </div>
@@ -101,7 +106,7 @@
         const submitBtn = document.getElementById("submitBtn");
         const verifyOtpBtn = document.getElementById("verifyOtpBtn");
         const forgotBtn = document.getElementById("forgotPasswordBtn");
-        const forgotPassword = document.getElementById("forgotPassword");
+        const forgotWrapper = document.getElementById("forgotPasswordWrapper");
 
         const usernameInput = document.getElementById("username");
         const emailInput = document.getElementById("email");
@@ -118,7 +123,7 @@
             title.textContent = isLoginMode ? "Login" : "Create Account";
             submitBtn.textContent = isLoginMode ? "Login" : "Send OTP";
             toggleBtn.textContent = isLoginMode ? "Don't have an account? Create one" : "Already have an account? Login";
-            forgotPassword.style.display = isLoginMode ? "block" : "none";
+            forgotWrapper.style.display = isLoginMode ? "block" : "none";
 
             errorDiv.style.display = "none";
             emailInput.style.display = isLoginMode ? "none" : "block";
@@ -134,7 +139,7 @@
             title.textContent = "Reset Password";
             submitBtn.textContent = "Send OTP";
             toggleBtn.style.display = "none";
-            forgotPassword.style.display = "none";
+            forgotWrapper.style.display = "none";
 
             emailInput.style.display = "block";
             emailInput.required = true;
@@ -151,8 +156,22 @@
             const email = emailInput.value.trim();
 
             if (isLoginMode) {
-                // login logic (same as before)
-            } else if (isForgotPasswordMode) {
+                const response = await fetch("/login", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ username, password })
+                });
+                const result = await response.json();
+                if (response.ok && result.success) {
+                    localStorage.setItem("user_id", result.user_id);
+                    window.location.href = "/home.html";
+                } else {
+                    errorDiv.style.display = "block";
+                    errorDiv.style.color = "red";
+                    errorDiv.textContent = result.error || "Login failed.";
+                }
+            }
+            else if (isForgotPasswordMode) {
                 const response = await fetch("/forgot-password/send-otp", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
@@ -171,57 +190,123 @@
                     errorDiv.style.color = "red";
                     errorDiv.textContent = result.error || "Failed to send OTP.";
                 }
-            } else {
-                // registration logic (same as before)
+            }
+            else {
+                const response = await fetch("/send-otp", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ username, email })
+                });
+                const result = await response.json();
+
+                if (response.ok && result.success) {
+                    otpInput.style.display = "block";
+                    verifyOtpBtn.style.display = "block";
+                    errorDiv.style.display = "block";
+                    errorDiv.style.color = "green";
+                    errorDiv.textContent = "OTP sent to your email.";
+                } else {
+                    errorDiv.style.display = "block";
+                    errorDiv.style.color = "red";
+                    errorDiv.textContent = result.error || "Failed to send OTP.";
+                }
             }
         });
 
         verifyOtpBtn.addEventListener("click", async () => {
-            const username = usernameInput.value.trim();
-            const email = emailInput.value.trim();
             const otp = otpInput.value.trim();
+            const email = emailInput.value.trim();
 
-            if (isForgotPasswordMode) {
+            const otpResponse = await fetch("/verify-otp", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ email, otp })
+            });
+
+            const otpResult = await otpResponse.json();
+
+            if (otpResponse.ok && otpResult.success) {
+                errorDiv.style.display = "block";
+                errorDiv.style.color = "green";
+                errorDiv.textContent = "OTP verified.";
+
                 otpInput.style.display = "none";
                 verifyOtpBtn.style.display = "none";
-                passwordInput.style.display = "block";
-                rePasswordInput.style.display = "block";
-                submitBtn.textContent = "Reset Password";
-                submitBtn.style.display = "block";
 
-                submitBtn.onclick = async function () {
-                    const newPassword = passwordInput.value.trim();
-                    const confirmPassword = rePasswordInput.value.trim();
+                if (isForgotPasswordMode) {
+                    passwordInput.style.display = "block";
+                    rePasswordInput.style.display = "block";
+                    submitBtn.textContent = "Reset Password";
+                    submitBtn.style.display = "block";
 
-                    if (newPassword !== confirmPassword) {
-                        errorDiv.style.display = "block";
-                        errorDiv.style.color = "red";
-                        errorDiv.textContent = "Passwords do not match!";
-                        return;
-                    }
+                    submitBtn.onclick = async function () {
+                        const password = passwordInput.value.trim();
+                        const confirmPassword = rePasswordInput.value.trim();
+                        const username = usernameInput.value.trim();
 
-                    const response = await fetch("/forgot-password/reset", {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ username, email, otp, newPassword })
-                    });
-                    const result = await response.json();
+                        if (password !== confirmPassword) {
+                            errorDiv.style.color = "red";
+                            errorDiv.textContent = "Passwords do not match!";
+                            return;
+                        }
 
-                    if (response.ok && result.success) {
-                        errorDiv.style.display = "block";
-                        errorDiv.style.color = "green";
-                        errorDiv.textContent = "Password reset successfully. Please login.";
-                        window.setTimeout(() => location.reload(), 2000);
-                    } else {
-                        errorDiv.style.display = "block";
-                        errorDiv.style.color = "red";
-                        errorDiv.textContent = result.error || "Reset failed.";
-                    }
+                        const resetResponse = await fetch("/forgot-password/reset", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ username, password })
+                        });
+
+                        const resetResult = await resetResponse.json();
+                        if (resetResponse.ok && resetResult.success) {
+                            localStorage.setItem("user_id", resetResult.user_id);
+                            errorDiv.style.color = "green";
+                            errorDiv.textContent = "Password reset successfully. Please login.";
+                            setTimeout(() => location.reload(), 2000);
+                        } else {
+                            errorDiv.style.color = "red";
+                            errorDiv.textContent = resetResult.error || "Reset failed.";
+                        }
+                    };
+                } else {
+                    passwordInput.style.display = "block";
+                    rePasswordInput.style.display = "block";
+                    submitBtn.textContent = "Register";
+                    submitBtn.style.display = "block";
+
+                    submitBtn.onclick = async function () {
+                        const password = passwordInput.value.trim();
+                        const rePassword = rePasswordInput.value.trim();
+                        const username = usernameInput.value.trim();
+
+                        if (password !== rePassword) {
+                            errorDiv.style.color = "red";
+                            errorDiv.textContent = "Passwords do not match!";
+                            return;
+                        }
+
+                        const registerResponse = await fetch("/register", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ username, password, email })
+                        });
+
+                        const registerResult = await registerResponse.json();
+                        if (registerResponse.ok && registerResult.success) {
+                            localStorage.setItem("user_id", registerResult.user_id);
+                            window.location.href = "/home.html";
+                        } else {
+                            errorDiv.style.color = "red";
+                            errorDiv.textContent = registerResult.error || "Registration failed.";
+                        }
+                    };
                 }
             } else {
-                // existing OTP verification for create account
+                errorDiv.style.display = "block";
+                errorDiv.style.color = "red";
+                errorDiv.textContent = otpResult.error || "Invalid OTP.";
             }
         });
+
     </script>
 </body>
 

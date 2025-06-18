@@ -4,6 +4,7 @@ const path = require('path');
 const db = require('./db');
 const bcrypt = require('bcrypt');
 const nodemailer = require('nodemailer');
+require('dotenv').config(); 
 
 // const dataFile = path.join(__dirname, 'data', 'tasks.json');
 
@@ -13,6 +14,7 @@ app.use(express.json());
 app.use(express.static('public'));
 app.use(express.urlencoded({ extended: true }));
 
+// done
 app.post('/register', async (req, res) => {
     const { username, password, email } = req.body;
     try {
@@ -29,6 +31,23 @@ app.post('/register', async (req, res) => {
     }
 });
 
+// done
+app.post('/forgot-password/reset', async (req, res) => {
+    const { username, password } = req.body;
+    try {
+        const hashedPassword = await bcrypt.hash(password, 10);
+        const result = await db.query(
+            `Update users set password = $1 where username = $2 returning *`,
+            [hashedPassword, username]
+        );
+
+        return res.status(201).json({ success: true, user_id: result.rows[0].user_id });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: "Server error during registration" });
+    }
+})
+
 const otpGenerator = () => { return Math.floor(100000 + Math.random() * 900000) }
 const otpCatch = {}
 
@@ -38,20 +57,22 @@ const transporter = nodemailer.createTransport(
         port: 465,
         secure: true,
         auth: {
-            user: process.env.SMPT_USER,
-            pass: process.env.SMPT_PASS
+            user: process.env.EMAIL_USER,
+            pass: process.env.EMAIL_PASS
         }
     }
 )
 
 async function sendOtp(email, otp) {
     await transporter.sendMail({
+        from: process.env.EMAIL_USER,
         to: email,
         subject: 'Your OTP for registration',
         html: `Your OTP is: ${otp}`,
     });
 }
 
+// done
 app.post('/send-otp', async (req, res) => {
     const { username, email } = req.body;
     try {
@@ -68,31 +89,59 @@ app.post('/send-otp', async (req, res) => {
         const otp = otpGenerator();
         otpCatch[email] = { otp };
 
-        sendOtp(email, otp);
+        await sendOtp(email, otp);
 
         res.status(200).json({ success: true, message: 'OTP sent successfully' });
     }
-    catch(err) {
+    catch (err) {
         console.error('Error sending email:', err);
         res.status(500).json({ success: false, error: 'Failed to send OTP' });
     }
 });
 
+// done
+app.post('/forgot-password/send-otp', async (req, res) => {
+    const { username, email } = req.body;
+    try {
+        const checkUser = await db.query('select * from users where username = $1', [username]);
+        if (checkUser.rows.length === 0) {
+            return res.status(400).json({ error: "Username does not exist" });
+        }
+
+        if(email !==checkUser.rows[0].email) {
+            return res.status(400).json({ error: "Invalid email id" });
+        }
+
+        const otp = otpGenerator();
+        otpCatch[email] = { otp };
+
+        sendOtp(email, otp);
+
+        res.status(200).json({ success: true, message: 'OTP sent successfully', email });
+    }
+    catch (err) {
+        console.error('Error sending email:', err);
+        res.status(500).json({ success: false, error: 'Failed to send OTP' });
+    }
+})
+
+// done
 app.post('/verify-otp', async (req, res) => {
-    const { username, password, email, otp } = req.body;
+    const { email, otp } = req.body;
     try {
         if (otpCatch[email].otp == otp) {
+            delete otpCatch[email];
             return res.status(200).json({ success: true, message: 'OTP verified' });
         }
-        res.status(400).json({ success: false, error: 'Invalid OTP'})
+        res.status(400).json({ success: false, error: 'Invalid OTP' })
     }
-    catch(err) {
+    catch (err) {
         console.error(err);
         res.status(500).json({ error: "Server error during OTP verification" });
     }
 });
 
-
+// done
 app.post('/login', async (req, res) => {
     const { username, password } = req.body;
     try {
@@ -214,6 +263,3 @@ app.delete('/api/tasks/:id', async (req, res) => {
 app.listen(8080, () => {
     console.log("http://localhost:8080/");
 });
-
-
-
