@@ -100,6 +100,10 @@
     </div>
 
     <script>
+        if (localStorage.getItem("user_id")) {
+            window.location.href = "/home.html";
+        }
+
         const form = document.getElementById("authForm");
         const errorDiv = document.getElementById("errorMsg");
         const toggleBtn = document.getElementById("toggleMode");
@@ -133,8 +137,11 @@
             errorDiv.style.display = "none";
             emailInput.style.display = isLoginMode ? "none" : "block";
             otpInput.style.display = "none";
+            otpInput.required = false;
             passwordInput.style.display = isLoginMode ? "block" : "none";
             passwordInput.value = "";
+            usernameInput.value = "";
+            emailInput.value = "";
             rePasswordInput.style.display = "none";
             verifyOtpBtn.style.display = "none";
         });
@@ -149,8 +156,11 @@
 
             emailInput.style.display = "block";
             emailInput.required = true;
+            emailInput.value = "";
+            usernameInput.value = "";
             passwordInput.style.display = "none";
             rePasswordInput.style.display = "none";
+            otpInput.required = false;
             otpInput.style.display = "none";
             verifyOtpBtn.style.display = "none";
         });
@@ -171,15 +181,18 @@
                 if (response.ok && result.success) {
                     localStorage.setItem("user_id", result.user_id);
                     window.location.href = "/home.html";
-                } else {
+                }
+                else {
                     errorDiv.style.display = "block";
                     errorDiv.style.color = "red";
+                    passwordInput.value = "";
                     errorDiv.textContent = result.error || "Login failed.";
                 }
+                return;
             }
 
-            otpInput.style.display = "block";
             otpInput.required = true;
+            otpInput.style.display = "block";
             verifyOtpBtn.style.display = "block";
             errorDiv.style.display = "block";
             errorDiv.style.color = "green";
@@ -195,7 +208,9 @@
                 if (response.ok && result.success) {
                     errorDiv.textContent = "OTP sent to your email.";
                     disableSendOtp(120);
-                } else {
+                }
+                else {
+                    otpInput.required = false;
                     otpInput.style.display = "none";
                     verifyOtpBtn.style.display = "none";
                     errorDiv.style.display = "block";
@@ -214,7 +229,9 @@
                 if (response.ok && result.success) {
                     errorDiv.textContent = "OTP sent to your email.";
                     disableSendOtp(120);
-                } else {
+                }
+                else {
+                    otpInput.required = false;
                     otpInput.style.display = "none";
                     verifyOtpBtn.style.display = "none";
                     errorDiv.style.display = "block";
@@ -240,9 +257,10 @@
                 errorDiv.style.display = "block";
                 errorDiv.style.color = "green";
                 errorDiv.textContent = "OTP verified.";
-
+                otpInput.required = false;
                 otpInput.style.display = "none";
                 verifyOtpBtn.style.display = "none";
+                resetSendOtpButton();
 
                 if (isForgotPasswordMode) {
                     passwordInput.style.display = "block";
@@ -258,6 +276,7 @@
                         if (password !== confirmPassword) {
                             errorDiv.style.color = "red";
                             errorDiv.textContent = "Passwords do not match!";
+                            rePasswordInput.value = "";
                             return;
                         }
 
@@ -273,12 +292,14 @@
                             errorDiv.style.color = "green";
                             errorDiv.textContent = "Password reset successfully. Please login.";
                             setTimeout(() => location.reload(), 2000);
-                        } else {
+                        }
+                        else {
                             errorDiv.style.color = "red";
                             errorDiv.textContent = resetResult.error || "Reset failed.";
                         }
                     };
-                } else {
+                }
+                else {
                     passwordInput.style.display = "block";
                     rePasswordInput.style.display = "block";
                     submitBtn.textContent = "Register";
@@ -305,13 +326,15 @@
                         if (registerResponse.ok && registerResult.success) {
                             localStorage.setItem("user_id", registerResult.user_id);
                             window.location.href = "/home.html";
-                        } else {
+                        }
+                        else {
                             errorDiv.style.color = "red";
                             errorDiv.textContent = registerResult.error || "Registration failed.";
                         }
                     };
                 }
-            } else {
+            }
+            else {
                 errorDiv.style.display = "block";
                 errorDiv.style.color = "red";
                 errorDiv.textContent = otpResult.error || "Invalid OTP.";

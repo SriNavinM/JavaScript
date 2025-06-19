@@ -216,6 +216,11 @@ class TaskManager {
     }
 }
 
+if (!localStorage.getItem("user_id")) {
+    window.location.href = "/";
+}
+
+
 const handler = new TaskManager();
 handler.load();
 

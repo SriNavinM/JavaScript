@@ -46,7 +46,7 @@ app.post('/forgot-password/reset', async (req, res) => {
         console.error(err);
         res.status(500).json({ error: "Server error during registration" });
     }
-})
+});
 
 const otpGenerator = () => { return Math.floor(100000 + Math.random() * 900000) }
 const otpCatch = {}
