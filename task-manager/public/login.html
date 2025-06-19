@@ -120,10 +120,11 @@
 
         toggleBtn.addEventListener("click", () => {
             isLoginMode = !isLoginMode;
-            if(isForgotPasswordMode) {
+            if (isForgotPasswordMode) {
                 isForgotPasswordMode = false;
                 isLoginMode = false;
             }
+            resetSendOtpButton();
             title.textContent = isLoginMode ? "Login" : "Create Account";
             submitBtn.textContent = isLoginMode ? "Login" : "Send OTP";
             toggleBtn.textContent = isLoginMode ? "Don't have an account? Create one" : "Already have an account? Login";
@@ -133,6 +134,7 @@
             emailInput.style.display = isLoginMode ? "none" : "block";
             otpInput.style.display = "none";
             passwordInput.style.display = isLoginMode ? "block" : "none";
+            passwordInput.value = "";
             rePasswordInput.style.display = "none";
             verifyOtpBtn.style.display = "none";
         });
@@ -140,6 +142,7 @@
         forgotBtn.addEventListener("click", () => {
             isLoginMode = false;
             isForgotPasswordMode = true;
+            resetSendOtpButton();
             title.textContent = "Reset Password";
             submitBtn.textContent = "Send OTP";
             forgotWrapper.style.display = "none";
@@ -182,7 +185,6 @@
             errorDiv.style.color = "green";
             errorDiv.textContent = "Sending OTP...";
             if (isForgotPasswordMode) {
-                disableSendOtp(120);
                 const response = await fetch("/forgot-password/send-otp", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
@@ -192,6 +194,7 @@
 
                 if (response.ok && result.success) {
                     errorDiv.textContent = "OTP sent to your email.";
+                    disableSendOtp(120);
                 } else {
                     otpInput.style.display = "none";
                     verifyOtpBtn.style.display = "none";
@@ -201,7 +204,6 @@
                 }
             }
             else {
-                disableSendOtp(120);
                 const response = await fetch("/send-otp", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
@@ -211,6 +213,7 @@
 
                 if (response.ok && result.success) {
                     errorDiv.textContent = "OTP sent to your email.";
+                    disableSendOtp(120);
                 } else {
                     otpInput.style.display = "none";
                     verifyOtpBtn.style.display = "none";
@@ -242,7 +245,6 @@
                 verifyOtpBtn.style.display = "none";
 
                 if (isForgotPasswordMode) {
-                    passwordInput.value = "";
                     passwordInput.style.display = "block";
                     rePasswordInput.style.display = "block";
                     submitBtn.textContent = "Reset Password";
@@ -277,7 +279,6 @@
                         }
                     };
                 } else {
-                    passwordInput.value = "";
                     passwordInput.style.display = "block";
                     rePasswordInput.style.display = "block";
                     submitBtn.textContent = "Register";
@@ -321,14 +322,13 @@
             let timeLeft = durationInSeconds;
             submitBtn.disabled = true;
             submitBtn.style.cursor = 'not-allowed';
-
             submitBtn.textContent = `Resend OTP in (${timeLeft}s)`;
 
-            const interval = setInterval(() => {
+            otpTimer = setInterval(() => {
                 timeLeft--;
                 submitBtn.textContent = `Resend OTP (${timeLeft}s)`;
                 if (timeLeft <= 0) {
-                    clearInterval(interval);
+                    clearInterval(otpTimer);
                     submitBtn.disabled = false;
                     submitBtn.style.cursor = 'pointer';
                     submitBtn.textContent = 'Resend OTP';
@@ -336,6 +336,16 @@
             }, 1000);
         }
 
+        let otpTimer = null;
+        function resetSendOtpButton() {
+            if (otpTimer) {
+                clearInterval(otpTimer);
+                otpTimer = null;
+            }
+            submitBtn.disabled = false;
+            submitBtn.style.cursor = 'pointer';
+            submitBtn.textContent = isLoginMode ? "Login" : "Send OTP";
+        }
 
     </script>
 </body>
