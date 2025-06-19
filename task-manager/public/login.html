@@ -136,6 +136,7 @@
 
             errorDiv.style.display = "none";
             emailInput.style.display = isLoginMode ? "none" : "block";
+            emailInput.required = isLoginMode ? false : true;
             otpInput.style.display = "none";
             otpInput.required = false;
             passwordInput.style.display = isLoginMode ? "block" : "none";
@@ -167,6 +168,17 @@
 
         form.addEventListener("submit", async function (event) {
             event.preventDefault();
+
+            if (emailInput.style.display === "none") {
+                emailInput.required = false;
+            }
+            if (otpInput.style.display === "none") {
+                otpInput.required = false;
+            }
+            if (rePasswordInput.style.display === "none") {
+                rePasswordInput.required = false;
+            }
+
             const username = usernameInput.value.trim();
             const password = passwordInput.value.trim();
             const email = emailInput.value.trim();
@@ -289,9 +301,7 @@
                         const resetResult = await resetResponse.json();
                         if (resetResponse.ok && resetResult.success) {
                             localStorage.setItem("user_id", resetResult.user_id);
-                            errorDiv.style.color = "green";
-                            errorDiv.textContent = "Password reset successfully. Please login.";
-                            setTimeout(() => location.reload(), 2000);
+                            location.reload();
                         }
                         else {
                             errorDiv.style.color = "red";

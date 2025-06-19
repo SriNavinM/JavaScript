@@ -4,7 +4,7 @@ const path = require('path');
 const db = require('./db');
 const bcrypt = require('bcrypt');
 const nodemailer = require('nodemailer');
-require('dotenv').config(); 
+require('dotenv').config();
 
 // const dataFile = path.join(__dirname, 'data', 'tasks.json');
 
@@ -14,7 +14,6 @@ app.use(express.json());
 app.use(express.static('public'));
 app.use(express.urlencoded({ extended: true }));
 
-// done
 app.post('/register', async (req, res) => {
     const { username, password, email } = req.body;
     try {
@@ -31,7 +30,6 @@ app.post('/register', async (req, res) => {
     }
 });
 
-// done
 app.post('/forgot-password/reset', async (req, res) => {
     const { username, password } = req.body;
     try {
@@ -49,7 +47,6 @@ app.post('/forgot-password/reset', async (req, res) => {
 });
 
 const otpGenerator = () => { return Math.floor(100000 + Math.random() * 900000) }
-const otpCatch = {}
 
 const transporter = nodemailer.createTransport(
     {
@@ -72,7 +69,6 @@ async function sendOtp(email, otp) {
     });
 }
 
-// done
 app.post('/send-otp', async (req, res) => {
     const { username, email } = req.body;
     try {
@@ -87,7 +83,15 @@ app.post('/send-otp', async (req, res) => {
         }
 
         const otp = otpGenerator();
-        otpCatch[email] = { otp };
+
+        const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
+        await db.query(
+            `insert into users_otp (email, otp, expires_at)
+            values ($1, $2, $3)
+            on conflict (email) do update
+            set otp = $2, expires_at = $3`,
+            [email, otp, expiresAt]
+        );
 
         await sendOtp(email, otp);
 
@@ -99,7 +103,6 @@ app.post('/send-otp', async (req, res) => {
     }
 });
 
-// done
 app.post('/forgot-password/send-otp', async (req, res) => {
     const { username, email } = req.body;
     try {
@@ -108,12 +111,20 @@ app.post('/forgot-password/send-otp', async (req, res) => {
             return res.status(400).json({ error: "Username does not exist" });
         }
 
-        if(email !==checkUser.rows[0].email) {
+        if (email !== checkUser.rows[0].email) {
             return res.status(400).json({ error: "Invalid email id" });
         }
 
         const otp = otpGenerator();
-        otpCatch[email] = { otp };
+
+        const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
+        await db.query(
+            `insert into users_otp (email, otp, expires_at)
+            values ($1, $2, $3)
+            on conflict (email) do update
+            set otp = $2, expires_at = $3`,
+            [email, otp, expiresAt]
+        );
 
         sendOtp(email, otp);
 
@@ -125,15 +136,20 @@ app.post('/forgot-password/send-otp', async (req, res) => {
     }
 })
 
-// done
 app.post('/verify-otp', async (req, res) => {
     const { email, otp } = req.body;
     try {
-        if (otpCatch[email].otp == otp) {
-            delete otpCatch[email];
-            return res.status(200).json({ success: true, message: 'OTP verified' });
+        const result = await db.query('select * from users_otp where email = $1', [email]);
+        const otpEntry = result.rows[0];
+
+        if (!otpEntry || otpEntry.otp !== otp) {
+            return res.status(400).json({ success: false, error: 'Invalid OTP' });
         }
-        res.status(400).json({ success: false, error: 'Invalid OTP' })
+        if(new Date() > new Date(otpEntry.expires_at)) {
+            return res.status(400).json({ success: false, error: 'OTP Expired' });
+        }
+
+        return res.status(200).json({ success: true, message: 'OTP verified' });
     }
     catch (err) {
         console.error(err);
@@ -141,7 +157,6 @@ app.post('/verify-otp', async (req, res) => {
     }
 });
 
-// done
 app.post('/login', async (req, res) => {
     const { username, password } = req.body;
     try {
