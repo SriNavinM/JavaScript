@@ -42,6 +42,7 @@
             color: white;
             border: none;
             border-radius: 10px;
+            cursor: pointer;
         }
 
         button:hover {
@@ -119,7 +120,10 @@
 
         toggleBtn.addEventListener("click", () => {
             isLoginMode = !isLoginMode;
-            isForgotPasswordMode = false;
+            if(isForgotPasswordMode) {
+                isForgotPasswordMode = false;
+                isLoginMode = false;
+            }
             title.textContent = isLoginMode ? "Login" : "Create Account";
             submitBtn.textContent = isLoginMode ? "Login" : "Send OTP";
             toggleBtn.textContent = isLoginMode ? "Don't have an account? Create one" : "Already have an account? Login";
@@ -138,7 +142,6 @@
             isForgotPasswordMode = true;
             title.textContent = "Reset Password";
             submitBtn.textContent = "Send OTP";
-            toggleBtn.style.display = "none";
             forgotWrapper.style.display = "none";
 
             emailInput.style.display = "block";
@@ -171,7 +174,15 @@
                     errorDiv.textContent = result.error || "Login failed.";
                 }
             }
-            else if (isForgotPasswordMode) {
+
+            otpInput.style.display = "block";
+            otpInput.required = true;
+            verifyOtpBtn.style.display = "block";
+            errorDiv.style.display = "block";
+            errorDiv.style.color = "green";
+            errorDiv.textContent = "Sending OTP...";
+            if (isForgotPasswordMode) {
+                disableSendOtp(120);
                 const response = await fetch("/forgot-password/send-otp", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
@@ -180,18 +191,17 @@
                 const result = await response.json();
 
                 if (response.ok && result.success) {
-                    otpInput.style.display = "block";
-                    verifyOtpBtn.style.display = "block";
-                    errorDiv.style.display = "block";
-                    errorDiv.style.color = "green";
                     errorDiv.textContent = "OTP sent to your email.";
                 } else {
+                    otpInput.style.display = "none";
+                    verifyOtpBtn.style.display = "none";
                     errorDiv.style.display = "block";
                     errorDiv.style.color = "red";
                     errorDiv.textContent = result.error || "Failed to send OTP.";
                 }
             }
             else {
+                disableSendOtp(120);
                 const response = await fetch("/send-otp", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
@@ -200,12 +210,10 @@
                 const result = await response.json();
 
                 if (response.ok && result.success) {
-                    otpInput.style.display = "block";
-                    verifyOtpBtn.style.display = "block";
-                    errorDiv.style.display = "block";
-                    errorDiv.style.color = "green";
                     errorDiv.textContent = "OTP sent to your email.";
                 } else {
+                    otpInput.style.display = "none";
+                    verifyOtpBtn.style.display = "none";
                     errorDiv.style.display = "block";
                     errorDiv.style.color = "red";
                     errorDiv.textContent = result.error || "Failed to send OTP.";
@@ -234,6 +242,7 @@
                 verifyOtpBtn.style.display = "none";
 
                 if (isForgotPasswordMode) {
+                    passwordInput.value = "";
                     passwordInput.style.display = "block";
                     rePasswordInput.style.display = "block";
                     submitBtn.textContent = "Reset Password";
@@ -268,6 +277,7 @@
                         }
                     };
                 } else {
+                    passwordInput.value = "";
                     passwordInput.style.display = "block";
                     rePasswordInput.style.display = "block";
                     submitBtn.textContent = "Register";
@@ -306,6 +316,26 @@
                 errorDiv.textContent = otpResult.error || "Invalid OTP.";
             }
         });
+
+        function disableSendOtp(durationInSeconds) {
+            let timeLeft = durationInSeconds;
+            submitBtn.disabled = true;
+            submitBtn.style.cursor = 'not-allowed';
+
+            submitBtn.textContent = `Resend OTP in (${timeLeft}s)`;
+
+            const interval = setInterval(() => {
+                timeLeft--;
+                submitBtn.textContent = `Resend OTP (${timeLeft}s)`;
+                if (timeLeft <= 0) {
+                    clearInterval(interval);
+                    submitBtn.disabled = false;
+                    submitBtn.style.cursor = 'pointer';
+                    submitBtn.textContent = 'Resend OTP';
+                }
+            }, 1000);
+        }
+
 
     </script>
 </body>
