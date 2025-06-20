@@ -42,9 +42,21 @@ class TaskManager {
     }
 
     async load() {
-        const user_id = localStorage.getItem("user_id");
         try {
-            const response = await fetch(`/api/tasks?user_id=${user_id}`);
+            const response = await fetch(`/api/tasks`, {
+                method: 'GET',
+                credentials: "include"
+            });
+
+            if (!response.ok) {
+                if (response.status === 401) {
+                    console.warn("Not logged in. Redirecting to login page.");
+                    window.location.href = '/login.html';
+                    return;
+                }
+                throw new Error("Failed to load tasks");
+            }
+
             const data = await response.json();
             this.taskList = data.map(x =>
                 new Task(x.id, x.title, x.description, x.due_date, x.completed, x.completed_at)
@@ -62,15 +74,13 @@ class TaskManager {
             error.style.display = "block";
             return false;
         }
-        const user_id = localStorage.getItem("user_id");
-        const newTask = { title, description, dueDate, user_id };
+        const newTask = { title, description, dueDate };
 
         try {
-            const response = await fetch(`/api/tasks?user_id=${user_id}`, {
+            const response = await fetch(`/api/tasks`, {
                 method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
+                headers: { "Content-Type": "application/json" },
+                credentials: "include",
                 body: JSON.stringify(newTask)
             });
             const data = await response.json();
@@ -100,12 +110,12 @@ class TaskManager {
 
     async completeTask(index) {
         const task = this.taskList[index];
-        const user_id = localStorage.getItem("user_id");
         try {
             const response = await fetch(`/api/tasks/${task.id}`, {
                 method: 'PATCH',
                 headers: { "Content-Type": 'application/json' },
-                body: JSON.stringify({ completed: true, user_id })
+                credentials: "include",
+                body: JSON.stringify({ completed: true })
             });
 
             const data = await response.json();
@@ -123,12 +133,10 @@ class TaskManager {
     }
 
     async deleteTask(index) {
-        const user_id = localStorage.getItem("user_id");
         try {
             const response = await fetch(`/api/tasks/${this.taskList[index].id}`, {
                 method: 'DELETE',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ user_id })
+                credentials: "include"
             });
             if (!response.ok) {
                 throw new Error("Failed to delete task");
@@ -192,12 +200,12 @@ class TaskManager {
             return false;
         }
 
-        const user_id = localStorage.getItem("user_id");
         try {
             const response = await fetch(`/api/tasks/${this.taskList[index].id}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ title: newTitle, description: newDesc, dueDate: newDueDate, user_id })
+                credentials: "include",
+                body: JSON.stringify({ title: newTitle, description: newDesc, dueDate: newDueDate })
             });
 
             if (!response.ok) {
@@ -216,13 +224,12 @@ class TaskManager {
     }
 }
 
-if (!localStorage.getItem("user_id")) {
-    window.location.href = "/";
-}
 
 
 const handler = new TaskManager();
-handler.load();
+if (window.location.pathname.includes("home.html")) {
+    handler.load();
+}
 
 function completeTask(index) {
     handler.completeTask(index);
@@ -309,8 +316,11 @@ function applyFilter() {
     handler.update();
 }
 
-function logout() {
-    localStorage.removeItem("user_id");
+async function logout() {
+    await fetch('/logout', {
+        method: 'POST',
+        credentials: "include"
+    })
     window.location.href = "/";
 }
 

@@ -100,9 +100,6 @@
     </div>
 
     <script>
-        if (localStorage.getItem("user_id")) {
-            window.location.href = "/home.html";
-        }
 
         const form = document.getElementById("authForm");
         const errorDiv = document.getElementById("errorMsg");
@@ -191,7 +188,6 @@
                 });
                 const result = await response.json();
                 if (response.ok && result.success) {
-                    localStorage.setItem("user_id", result.user_id);
                     window.location.href = "/home.html";
                 }
                 else {
@@ -300,7 +296,6 @@
 
                         const resetResult = await resetResponse.json();
                         if (resetResponse.ok && resetResult.success) {
-                            localStorage.setItem("user_id", resetResult.user_id);
                             location.reload();
                         }
                         else {
@@ -334,7 +329,6 @@
 
                         const registerResult = await registerResponse.json();
                         if (registerResponse.ok && registerResult.success) {
-                            localStorage.setItem("user_id", registerResult.user_id);
                             window.location.href = "/home.html";
                         }
                         else {
@@ -379,7 +373,6 @@
             submitBtn.style.cursor = 'pointer';
             submitBtn.textContent = isLoginMode ? "Login" : "Send OTP";
         }
-
     </script>
 </body>
 

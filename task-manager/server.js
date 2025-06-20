@@ -4,6 +4,9 @@ const path = require('path');
 const db = require('./db');
 const bcrypt = require('bcrypt');
 const nodemailer = require('nodemailer');
+const session = require('express-session');
+const pgSession = require('connect-pg-simple')(session);
+
 require('dotenv').config();
 
 // const dataFile = path.join(__dirname, 'data', 'tasks.json');
@@ -14,6 +17,22 @@ app.use(express.json());
 app.use(express.static('public'));
 app.use(express.urlencoded({ extended: true }));
 
+app.use(session({
+    store: new pgSession({
+        pool: db,
+        tableName: 'session',
+        pruneSessionInterval: 60
+    }),
+    secret: process.env.SECRET_KEY,
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+        maxAge: 1000 * 60 * 60 * 2,
+        secure: false,
+        httpOnly: true
+    }
+}));
+
 app.post('/register', async (req, res) => {
     const { username, password, email } = req.body;
     try {
@@ -23,7 +42,8 @@ app.post('/register', async (req, res) => {
             [username, hashedPassword, email]
         );
 
-        return res.status(201).json({ success: true, user_id: result.rows[0].user_id });
+        req.session.user_id = result.rows[0].user_id;
+        return res.status(201).json({ success: true });
     } catch (err) {
         console.error(err);
         res.status(500).json({ error: "Server error during registration" });
@@ -45,6 +65,15 @@ app.post('/forgot-password/reset', async (req, res) => {
         res.status(500).json({ error: "Server error during registration" });
     }
 });
+
+function isAuthenticated(req, res, next) {
+    if(req.session.user_id) {
+        next();
+    }
+    else {
+        res.status(401).json({ error: "Unauthorized"});
+    }
+}
 
 const otpGenerator = () => { return Math.floor(100000 + Math.random() * 900000) }
 
@@ -169,6 +198,7 @@ app.post('/login', async (req, res) => {
         if (!isMatch) {
             return res.status(400).json({ error: "Incorrect password" });
         }
+        req.session.user_id = user.user_id;
         return res.status(200).json({ success: true, user_id: user.user_id });
     }
     catch (err) {
@@ -177,16 +207,24 @@ app.post('/login', async (req, res) => {
     }
 })
 
+app.post('/logout', (req, res) => {
+    req.session.destroy((err) => {
+        if(err) {
+            res.status(500).json({ error: 'Failed to Logout'});
+        }
+        res.clearCookie('connect.sid');
+        res.status(200).json({ success: true, message: 'Logged out Successfully' });
+    });
+})
+
 app.get('/', (req, res) => {
+    if(req.session.user_id)
+        res.redirect('/home.html');
     res.sendFile(__dirname + '/public/login.html');
 });
 
-app.get('/api/tasks', async (req, res) => {
-    const user_id = req.query.user_id;
-    if (!user_id) {
-        return res.status(400).json({ message: 'User ID is required' });
-    }
-
+app.get('/api/tasks', isAuthenticated, async (req, res) => {
+    const user_id = req.session.user_id;
     try {
         const result = await db.query(`select * from tasks where user_id = $1 order by completed`, [user_id]);
         return res.json(result.rows);
@@ -197,8 +235,9 @@ app.get('/api/tasks', async (req, res) => {
     }
 });
 
-app.post('/api/tasks', async (req, res) => {
-    const { title, description, dueDate, user_id } = req.body;
+app.post('/api/tasks', isAuthenticated, async (req, res) => {
+    const { title, description, dueDate } = req.body;
+    const user_id = req.session.user_id;
     try {
         const result = await db.query(
             `insert into tasks(title, description, due_date, user_id)
@@ -215,9 +254,10 @@ app.post('/api/tasks', async (req, res) => {
 });
 
 
-app.patch('/api/tasks/:id', async (req, res) => {
+app.patch('/api/tasks/:id', isAuthenticated, async (req, res) => {
     const id = req.params.id;
-    const { completed, user_id } = req.body;
+    const { completed } = req.body;
+    const user_id = req.session.user_id;
 
     try {
         const result = await db.query(
@@ -238,9 +278,10 @@ app.patch('/api/tasks/:id', async (req, res) => {
 });
 
 
-app.put('/api/tasks/:id', async (req, res) => {
+app.put('/api/tasks/:id', isAuthenticated, async (req, res) => {
     const id = req.params.id;
-    const { title, description, dueDate, user_id } = req.body;
+    const { title, description, dueDate } = req.body;
+    const user_id = req.session.user_id;
     try {
         const result = await db.query(
             `update tasks
@@ -259,9 +300,9 @@ app.put('/api/tasks/:id', async (req, res) => {
     }
 });
 
-app.delete('/api/tasks/:id', async (req, res) => {
+app.delete('/api/tasks/:id', isAuthenticated, async (req, res) => {
     const id = req.params.id;
-    const { user_id } = req.body;
+    const user_id = req.session.user_id;
     try {
         await db.query(
             `delete from tasks where id = $1 and user_id = $2 returning *`,
