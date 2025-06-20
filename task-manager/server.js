@@ -213,9 +213,9 @@ app.post('/logout', (req, res) => {
             res.status(500).json({ error: 'Failed to Logout'});
         }
         res.clearCookie('connect.sid');
-        res.status(200).json({ success: true, message: 'Logged out Successfully' });
+        return res.status(200).json({ success: true, message: 'Logged out Successfully' });
     });
-})
+});
 
 app.get('/', (req, res) => {
     if(req.session.user_id)
