@@ -277,6 +277,8 @@
                     submitBtn.style.display = "block";
 
                     submitBtn.onclick = async function () {
+                        event.preventDefault();
+
                         const password = passwordInput.value.trim();
                         const confirmPassword = rePasswordInput.value.trim();
                         const username = usernameInput.value.trim();
@@ -287,6 +289,15 @@
                             rePasswordInput.value = "";
                             return;
                         }
+                        const errors = checkPasswordStrength(password);
+                        if (errors.length > 0) {
+                            errorDiv.style.color = "red";
+                            errorDiv.textContent = "Password must contain: " + errors.join(", ");
+                            rePasswordInput.value = "";
+                            return;
+                        }
+
+
 
                         const resetResponse = await fetch("/forgot-password/reset", {
                             method: "POST",
@@ -311,6 +322,8 @@
                     submitBtn.style.display = "block";
 
                     submitBtn.onclick = async function () {
+                        event.preventDefault();
+
                         const password = passwordInput.value.trim();
                         const rePassword = rePasswordInput.value.trim();
                         const username = usernameInput.value.trim();
@@ -320,6 +333,15 @@
                             errorDiv.textContent = "Passwords do not match!";
                             return;
                         }
+
+                        const errors = checkPasswordStrength(password);
+                        if (errors.length > 0) {
+                            errorDiv.style.color = "red";
+                            errorDiv.textContent = "Password must contain: " + errors.join(", ");
+                            rePasswordInput.value = "";
+                            return;
+                        }
+
 
                         const registerResponse = await fetch("/register", {
                             method: "POST",
@@ -344,6 +366,27 @@
                 errorDiv.textContent = otpResult.error || "Invalid OTP.";
             }
         });
+
+        function checkPasswordStrength(password) {
+            const errors = [];
+
+            if (password.length < 8) {
+                errors.push("at least 8 characters");
+            }
+            if (!/[A-Z]/.test(password)) {
+                errors.push("an uppercase letter");
+            }
+            if (!/[a-z]/.test(password)) {
+                errors.push("a lowercase letter");
+            }
+            if (!/\d/.test(password)) {
+                errors.push("a number");
+            }
+            if (!/[!@#$%^&*(),.?":{}|<>_\-\\[\]]/.test(password)) {
+                errors.push("a special character");
+            }
+            return errors;
+        }
 
         function disableSendOtp(durationInSeconds) {
             let timeLeft = durationInSeconds;

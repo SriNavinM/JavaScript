@@ -33,8 +33,16 @@ app.use(session({
     }
 }));
 
+function isStrongPassword(password) {
+    const regex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{8,}$/;
+    return regex.test(password);
+}
+
 app.post('/register', async (req, res) => {
     const { username, password, email } = req.body;
+    if (!isStrongPassword(password)) {
+        return res.status(400).json({ error: "Weak password. Use at least 8 characters, with uppercase, lowercase, number, and symbol." });
+    }
     try {
         const hashedPassword = await bcrypt.hash(password, 10);
         const result = await db.query(
@@ -52,6 +60,9 @@ app.post('/register', async (req, res) => {
 
 app.post('/forgot-password/reset', async (req, res) => {
     const { username, password } = req.body;
+    if (!isStrongPassword(password)) {
+        return res.status(400).json({ error: "Weak password. Use at least 8 characters, with uppercase, lowercase, number, and symbol." });
+    }
     try {
         const hashedPassword = await bcrypt.hash(password, 10);
         const result = await db.query(
@@ -252,7 +263,7 @@ app.get('/api/tasks', isAuthenticated, async (req, res) => {
         if (search) {
             query += ` and lower(title) like $${count}`;
             values.push(`%${search.toLowerCase()}%`);
-            paramIndex++;
+            count++;
         }
 
         query += ` order by ${field} ${order}`;
