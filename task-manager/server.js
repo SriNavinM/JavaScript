@@ -210,7 +210,7 @@ app.post('/login', async (req, res) => {
 app.post('/logout', (req, res) => {
     req.session.destroy((err) => {
         if(err) {
-            res.status(500).json({ error: 'Failed to Logout'});
+            return res.status(500).json({ error: 'Failed to Logout'});
         }
         res.clearCookie('connect.sid');
         return res.status(200).json({ success: true, message: 'Logged out Successfully' });
@@ -219,19 +219,49 @@ app.post('/logout', (req, res) => {
 
 app.get('/', (req, res) => {
     if(req.session.user_id)
-        res.redirect('/home.html');
+        return res.redirect('/home.html');
     res.sendFile(__dirname + '/public/login.html');
 });
 
 app.get('/api/tasks', isAuthenticated, async (req, res) => {
     const user_id = req.session.user_id;
+    const {
+        filter = "all",
+        search = "",
+        sortField = "completed",
+        sortOrder = "asc"
+    } = req.query;
+
+    const validSortFields = ["title", "due_date", "completed"];
+    const validSortOrder = ["asc", "desc"];
+
+    const field = validSortFields.includes(sortField) ? sortField : "completed";
+    const order = validSortOrder.includes(sortOrder) ? sortOrder : "asc";
+
     try {
-        const result = await db.query(`select * from tasks where user_id = $1 order by completed`, [user_id]);
+        let query = `select * from tasks where user_id = $1`;
+        const values = [user_id];
+        let count = 2;
+
+        if (filter === "completed") {
+            query += ` and completed = true`;
+        } else if (filter === "pending") {
+            query += ` and completed = false`;
+        }
+
+        if (search) {
+            query += ` and lower(title) like $${count}`;
+            values.push(`%${search.toLowerCase()}%`);
+            paramIndex++;
+        }
+
+        query += ` order by ${field} ${order}`;
+
+        const result = await db.query(query, values);
         return res.json(result.rows);
-    }
-    catch (err) {
-        console.error('Error fetching tasks');
-        return res.status(500).json({ message: 'Failed to fetch tasks.json' });
+    } catch (err) {
+        console.error('Error fetching tasks:', err);
+        return res.status(500).json({ message: 'Failed to fetch tasks' });
     }
 });
 

@@ -46,7 +46,7 @@ class TaskManager {
             const params = new URLSearchParams({
                 filter: document.getElementById("statusFilter")?.value || "all",
                 search: document.getElementById("searchInput")?.value.toLowerCase() || "",
-                sortField: document.getElementById("sortField")?.value || "dueDate",
+                sortField: document.getElementById("sortField")?.value || "completed",
                 sortOrder: document.getElementById("sortOrder")?.value || "asc",
             });
 
